@@ -56,6 +56,10 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 	#include <unistd.h>
 #endif
 
+#ifdef USE_AIO
+#include <fcntl.h>
+#endif
+
 /*
 =============================================================================
 
@@ -1469,8 +1473,10 @@ long FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean unique
 							    !FS_IsExt(filename, ".fcf", l) &&
 							    Q_stricmp(filename, "jampgamex86.dll") != 0 &&
 							    //Q_stricmp(filename, "vm/qagame.qvm") != 0 &&
-							    !strstr(filename, "levelshots"))
+							    !strstr(filename, "levelshots") &&
+							    (FS_IsExt(filename, ".bsp", l) || FS_idPak(pak->pakFilename, "base")))
 							{
+								Com_Printf("Referencing %s due to file %s opened\n", pak->pakFilename, filename);
 								pak->referenced |= FS_GENERAL_REF;
 							}
 						}
@@ -3652,7 +3658,7 @@ const char *FS_ReferencedPakChecksums( void ) {
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
 		// is the element a pak file?
 		if ( search->pack ) {
-			if (search->pack->referenced || Q_stricmpn(search->pack->pakGamename, BASEGAME, strlen(BASEGAME))) {
+			if (search->pack->referenced) {
 				Q_strcat( info, sizeof( info ), va("%i ", search->pack->checksum ) );
 			}
 		}
@@ -3726,12 +3732,11 @@ const char *FS_ReferencedPakNames( void ) {
 
 	info[0] = 0;
 
-	// we want to return ALL pk3's from the fs_game path
-	// and referenced one's from base
+	// we want to return referenced paks
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
 		// is the element a pak file?
 		if ( search->pack ) {
-			if (search->pack->referenced || Q_stricmpn(search->pack->pakGamename, BASEGAME, strlen(BASEGAME))) {
+			if (search->pack->referenced) {
 				if (*info) {
 					Q_strcat(info, sizeof( info ), " " );
 				}
