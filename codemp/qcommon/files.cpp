@@ -1476,7 +1476,10 @@ long FS_FOpenFileRead( const char *filename, fileHandle_t *file, qboolean unique
 							    !strstr(filename, "levelshots") &&
 							    (FS_IsExt(filename, ".bsp", l) || FS_idPak(pak->pakFilename, "base")))
 							{
+								// hack to work around issue of com_logfile set and this being first thing logged
+								fsh[*file].handleFiles.file.z = (unzFile) -1;
 								Com_Printf("Referencing %s due to file %s opened\n", pak->pakFilename, filename);
+								fsh[*file].handleFiles.file.z = (unzFile) 0;
 								pak->referenced |= FS_GENERAL_REF;
 							}
 						}
