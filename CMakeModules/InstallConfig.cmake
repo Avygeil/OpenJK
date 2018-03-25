@@ -97,51 +97,6 @@ if(WIN32)
 				DESTINATION ${JKAInstallDir}
 				COMPONENT ${JKAMPClientComponent})
 	endif()
-
-	if(BuildSPEngine)
-		string(REPLACE "/" "\\\\" ICON "${SPDir}/win32/starwars.ico")
-		set(CPACK_NSIS_CREATE_ICONS_EXTRA
-			"${CPACK_NSIS_CREATE_ICONS_EXTRA}
-			CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Jedi Academy SP.lnk' \\\\
-				'$INSTDIR\\\\${SPEngine}.exe' \\\\
-				'' \\\\
-				'${ICON}'")
-
-		set(CPACK_NSIS_DELETE_ICONS_EXTRA
-			"${CPACK_NSIS_DELETE_ICONS_EXTRA}
-			Delete '$SMPROGRAMS\\\\$MUI_TEMP\\\\Jedi Academy SP.lnk'")
-
-		install(FILES ${MPDir}/OpenAL32.dll ${MPDir}/EaxMan.dll
-			DESTINATION ${JKAInstallDir}
-			COMPONENT ${JKASPClientComponent})
-
-		install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
-				DESTINATION ${JKAInstallDir}
-				COMPONENT ${JKASPClientComponent})
-	endif()
-
-	# Don't run this for now until we have JK2 SP working
-	if(FALSE AND BuildJK2SPEngine)
-		string(REPLACE "/" "\\\\" ICON "${SPDir}/win32/starwars.ico")
-		set(CPACK_NSIS_CREATE_ICONS_EXTRA
-			"${CPACK_NSIS_CREATE_ICONS_EXTRA}
-			CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\Jedi Outcast SP.lnk' \\\\
-				'$INSTDIR\\\\${JK2SPEngine}.exe' \\\\
-				'' \\\\
-				'${ICON}'")
-
-		set(CPACK_NSIS_DELETE_ICONS_EXTRA
-			"${CPACK_NSIS_DELETE_ICONS_EXTRA}
-			Delete '$SMPROGRAMS\\\\$MUI_TEMP\\\\Jedi Outcast SP.lnk'")
-
-		install(FILES ${MPDir}/OpenAL32.dll ${MPDir}/EaxMan.dll
-			DESTINATION ${JK2InstallDir}
-			COMPONENT ${JK2SPClientComponent})
-
-		install(PROGRAMS ${CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS}
-				DESTINATION ${JK2InstallDir}
-				COMPONENT ${JK2SPClientComponent})
-	endif()
 endif()
 
 # CPack for installer creation
