@@ -1010,6 +1010,8 @@ void SV_Init (void) {
 
 	sv_banFile = Cvar_Get( "sv_banFile", "serverbans.dat", CVAR_ARCHIVE, "File to use to store bans and exceptions" );
 
+	sv_printFullConnect = Cvar_Get( "sv_printFullConnect", "1", CVAR_ARCHIVE );
+
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
 
