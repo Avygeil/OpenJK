@@ -682,3 +682,16 @@ qboolean	NET_StringToAdr( const char *s, netadr_t *a ) {
 	return qtrue;
 }
 
+/*
+=============
+NET_AdrToInt
+
+Combines 4 bytes from the IP into a 32 bits integer
+=============
+*/
+uint32_t NET_AdrToInt( netadr_t a ) {
+	return ( uint32_t )( ( ( a.ip[0] << 24 ) & 0xFF000000 ) |
+		( ( a.ip[1] << 16 ) & 0x00FF0000 ) |
+		( ( a.ip[2] << 8 ) & 0x0000FF00 ) |
+		( a.ip[3] & 0x000000FF ) );
+}

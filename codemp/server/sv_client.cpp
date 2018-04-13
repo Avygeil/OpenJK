@@ -134,13 +134,13 @@ static qboolean SV_IsBanned( netadr_t *from, qboolean isexception )
 #define CONNECT_ATTEMPT_LOG_DELAY	10000
 
 typedef struct {
-	unsigned int ip;
+	uint32_t ip;
 	int lastAttemptTime;
 } IPConnectAttemptLog;
 
 static IPConnectAttemptLog connectingIPLog[MAX_CONNECTING_PEOPLE_LOG] = { 0 };
 
-static bool ShouldLogFullServerConnect( netadr_t* from ) {
+static bool ShouldLogFullServerConnect( netadr_t from ) {
 	if ( !sv_printFullConnect->integer ) {
 		return false;
 	}
@@ -148,10 +148,7 @@ static bool ShouldLogFullServerConnect( netadr_t* from ) {
 	unsigned int i;
 	int freeslot = -1;
 
-	unsigned int ip = ( ( from->ip[0] << 24 ) & 0xFF000000 ) |
-						( ( from->ip[1] << 16 ) & 0x00FF0000 ) |
-						( ( from->ip[2] << 8 ) & 0x0000FF00 ) |
-						( from->ip[3] & 0x000000FF );
+	uint32_t ip = NET_AdrToInt( from );
 
 	for ( i = 0; i < ARRAY_LEN( connectingIPLog ); ++i ) {
 		if ( connectingIPLog[i].ip == ip ) {
@@ -178,6 +175,7 @@ static bool ShouldLogFullServerConnect( netadr_t* from ) {
 
 	connectingIPLog[freeslot].ip = ip;
 	connectingIPLog[freeslot].lastAttemptTime = svs.time;
+
 	return true;
 }
 
@@ -350,7 +348,7 @@ void SV_DirectConnect( netadr_t from ) {
 			Com_DPrintf ("Rejected a connection.\n");
 
 			// notify the in game clients that someone is trying to connect
-			if ( ShouldLogFullServerConnect( &from ) ) {
+			if ( ShouldLogFullServerConnect( from ) ) {
 				SV_SendServerCommand( NULL, "print \"%s^7 is trying to connect\n\"", Info_ValueForKey( userinfo, "name" ) );
 			}
 
