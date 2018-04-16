@@ -39,8 +39,6 @@ option(BuildMPEngine "Whether to create projects for the MP client (openjk.exe)"
 option(BuildMPRdVanilla "Whether to create projects for the MP default renderer (rd-vanilla_x86.dll)" ON)
 option(BuildMPDed "Whether to create projects for the MP dedicated server (openjkded.exe)" ON)
 option(BuildMPGame "Whether to create projects for the MP server-side gamecode (jampgamex86.dll)" ON)
-option(BuildMPCGame "Whether to create projects for the MP clientside gamecode (cgamex86.dll)" ON)
-option(BuildMPUI "Whether to create projects for the MP UI code (uix86.dll)" ON)
 
 # Configure the use of bundled libraries.  By default, we assume the user is on
 # a platform that does not require any bundling.
@@ -142,8 +140,6 @@ set(MPEngine "openjk.${Architecture}")
 set(MPVanillaRenderer "rd-vanilla_${Architecture}")
 set(MPDed "openjkded.${Architecture}")
 set(MPGame "jampgame${Architecture}")
-set(MPCGame "cgame${Architecture}")
-set(MPUI "ui${Architecture}")
 set(AssetsPk3 "openjk-${Architecture}.pk3")
 # Library names
 set(MPBotLib "botlib")

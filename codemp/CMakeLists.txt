@@ -28,16 +28,6 @@ if(BuildMPGame)
 	add_subdirectory("${MPDir}/game")
 endif(BuildMPGame)
 
-#    Add CGame Project
-if(BuildMPCGame)
-	add_subdirectory("${MPDir}/cgame")
-endif(BuildMPCGame)
-
-#    Add UI Project
-if(BuildMPUI)
-	add_subdirectory("${MPDir}/ui")
-endif(BuildMPUI)
-
 #	 Add Vanilla JKA Renderer Project
 if(BuildMPRdVanilla)
 	add_subdirectory("${MPDir}/rd-vanilla")
@@ -706,14 +696,6 @@ endif(BuildMPDed)
 	set(GameLibsBuilt)
 	if(BuildMPGame)
 		set(GameLibsBuilt ${GameLibsBuilt} ${MPGame})
-	endif()
-
-	if(BuildMPCGame)
-		set(GameLibsBuilt ${GameLibsBuilt} ${MPCGame})
-	endif()
-
-	if(BuildMPUI)
-		set(GameLibsBuilt ${GameLibsBuilt} ${MPUI})
 	endif()
 
 if(WIN32)
