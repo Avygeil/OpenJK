@@ -42,11 +42,6 @@ option(BuildMPGame "Whether to create projects for the MP server-side gamecode (
 option(BuildMPCGame "Whether to create projects for the MP clientside gamecode (cgamex86.dll)" ON)
 option(BuildMPUI "Whether to create projects for the MP UI code (uix86.dll)" ON)
 
-option(BuildTests "Whether to build automatic unit tests (requires Boost)" OFF)
-
-Include(CMakeDependentOption)
-CMAKE_DEPENDENT_OPTION(BuildSymbolServer "Build WIP Windows Symbol Server (experimental and unused)" OFF "NOT WIN32 OR NOT MSVC" OFF)
-
 # Configure the use of bundled libraries.  By default, we assume the user is on
 # a platform that does not require any bundling.
 #
@@ -350,11 +345,3 @@ add_subdirectory(lib/minizip)
 
 # Add projects
 add_subdirectory(${MPDir})
-# Windows Symbol Server tools
-if(BuildSymbolServer)
-	add_subdirectory("tools/WinSymbol")
-endif()
-if(BuildTests)
-	enable_testing()
-	add_subdirectory("tests")
-endif()
