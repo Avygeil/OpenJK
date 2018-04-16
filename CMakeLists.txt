@@ -17,7 +17,6 @@
 #============================================================================
 
 cmake_minimum_required(VERSION 3.1)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.9" CACHE STRING "Minimum OS X deployment version")
 
 # For checks in subdirectories
 set(InOpenJK TRUE)
@@ -45,17 +44,9 @@ option(BuildMPGame "Whether to create projects for the MP server-side gamecode (
 # use Z_Malloc.
 
 set(UseInternalZlibDefault   OFF)
-set(UseInternalPNGDefault    OFF)
-set(UseInternalJPEGDefault   OFF)
 
 if(WIN32)
   set(UseInternalZlibDefault   ON)
-  set(UseInternalPNGDefault    ON)
-  set(UseInternalJPEGDefault   ON)
-endif()
-
-if(APPLE)
-  set(UseInternalJPEGDefault ON)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "BSD")
@@ -63,8 +54,6 @@ if(CMAKE_SYSTEM_NAME MATCHES "BSD")
 endif()
 
 option(UseInternalZlib   "If set, use bundled zlib."    ${UseInternalZlibDefault})
-option(UseInternalPNG    "If set, use bundled libpng."  ${UseInternalPNGDefault})
-option(UseInternalJPEG   "If set, use bundled libjpeg." ${UseInternalJPEGDefault})
 
 # Custom CMake Modules needed
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/CMakeModules")
@@ -303,22 +292,10 @@ set(SharedCommonSafeFiles
 	)
 
 
-if(UseInternalJPEG)
-  add_subdirectory(lib/jpeg-9a)
-else()
-  find_package(JPEG REQUIRED)
-endif()
-
 if(UseInternalZlib)
   add_subdirectory(lib/zlib)
 else()
   find_package(ZLIB REQUIRED)
-endif()
-
-if(UseInternalPNG)
-  add_subdirectory(lib/libpng)
-else()
-  find_package(PNG REQUIRED)
 endif()
 
 # Always use bundled minizip (sets MINIZIP_{LIBRARIES,INCLUDE_DIR})
