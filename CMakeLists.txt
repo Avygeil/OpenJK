@@ -16,7 +16,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 #============================================================================
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.6)
 
 # For checks in subdirectories
 set(InOpenJK TRUE)
@@ -303,3 +303,8 @@ add_subdirectory(lib/minizip)
 
 # Add projects
 add_subdirectory(${MPDir})
+
+# Set the startup project on MSVC (for some reason, the property needs to be set in the top level script)
+if(MSVC)
+	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${MPDed})
+endif()
