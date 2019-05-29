@@ -434,14 +434,13 @@ static void SV_AddEntitiesVisibleFromPoint( vec3_t origin, clientSnapshot_t *fra
 		}
 
 		// entities can request not to be sent to certain clients (NOTE: always send to ourselves)
-		if ( e != frame->ps.clientNum && (ent->r.svFlags & SVF_BROADCASTCLIENTS)
-			&& !(ent->r.broadcastClients[frame->ps.clientNum/32] & (1 << (frame->ps.clientNum % 32))) )
+		if ( e != frame->ps.clientNum && (ent->r.broadcastClients[1] & (1 << (frame->ps.clientNum % 32))) )
 		{
 			continue;
 		}
 		// broadcast entities are always sent, and so is the main player so we don't see noclip weirdness
 		if ( (ent->r.svFlags & SVF_BROADCAST) || e == frame->ps.clientNum
-			|| (ent->r.broadcastClients[frame->ps.clientNum/32] & (1 << (frame->ps.clientNum % 32))) )
+			|| (ent->r.broadcastClients[0] & (1 << (frame->ps.clientNum % 32))) )
 		{
 			SV_AddEntToSnapshot( svEnt, ent, eNums );
 			continue;
