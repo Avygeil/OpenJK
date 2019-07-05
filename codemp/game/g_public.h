@@ -715,7 +715,10 @@ typedef enum gameImportLegacy_e {
 	G_CM_REGISTER_TERRAIN,
 	G_RMG_INIT,
 	G_BOT_UPDATEWAYPOINTS,
-	G_BOT_CALCULATEPATHS
+	G_BOT_CALCULATEPATHS,
+
+	// new base_enhanced trap calls
+	G_OOBPRINT = 1337
 } gameImportLegacy_t;
 
 typedef enum gameExportLegacy_e {

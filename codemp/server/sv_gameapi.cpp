@@ -2781,6 +2781,16 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_GET_ENTITY_TOKEN:
 		return SV_GetEntityToken((char *)VMA(1), args[2]);
 
+	case G_OOBPRINT: {
+		int clientNum = args[1];
+		if ( clientNum < 0 || clientNum >= sv_maxclients->integer ) {
+			return 1;
+		}
+
+		NET_OutOfBandPrint( NS_SERVER, svs.clients[clientNum].netchan.remoteAddress, ( const char * )VMA( 2 ) );
+		return 0;
+	}
+
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %ld", (long int) args[0] );
 	}
