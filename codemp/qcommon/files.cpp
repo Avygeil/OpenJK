@@ -251,7 +251,7 @@ static cvar_t		*fs_basepath;
 static cvar_t		*fs_basegame;
 static cvar_t		*fs_cdpath;
 static cvar_t		*fs_copyfiles;
-static cvar_t		*fs_gamedirvar;
+cvar_t		*fs_gamedirvar;
 static cvar_t		*fs_dirbeforepak; //rww - when building search path, keep directories at top and insert pk3's under them
 static searchpath_t	*fs_searchpaths;
 static int			fs_readCount;			// total bytes read

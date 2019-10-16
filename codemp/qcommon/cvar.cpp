@@ -1454,6 +1454,7 @@ Cvar_InfoString_Big
   handles large info strings ( CS_SYSTEMINFO )
 =====================
 */
+extern const char* FilterFsGameString(const char* s);
 char	*Cvar_InfoString_Big( int bit ) {
 	static char	info[BIG_INFO_STRING];
 	cvar_t	*var;
@@ -1465,7 +1466,10 @@ char	*Cvar_InfoString_Big( int bit ) {
 		if (!(var->flags & CVAR_INTERNAL) && var->name &&
 			(var->flags & bit))
 		{
-			Info_SetValueForKey_Big (info, var->name, var->string);
+			if (!Q_stricmp(var->name, "fs_game") && VALIDSTRING(fs_gameForceBroadcast->string) && Q_stricmp(fs_gameForceBroadcast->string, "0"))
+				Info_SetValueForKey_Big(info, var->name, FilterFsGameString(fs_gameForceBroadcast->string));
+			else
+				Info_SetValueForKey_Big (info, var->name, var->string);
 		}
 	}
 	return info;
