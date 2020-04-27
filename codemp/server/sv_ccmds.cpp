@@ -296,7 +296,7 @@ static void SV_MapRestart_f( void ) {
 	Cvar_Set( "sv_serverid", va("%i", sv.serverId ) );
 
 	// uniquely identifies a game
-	Cvar_Set( "sv_uniqueid", va( "%08x%08x", sv.serverId, sv.checksumFeed ) );
+	Cvar_Set( "sv_matchid", va( "%08x%08x", sv.serverId, sv.checksumFeed ) );
 
 	time( &sv.realMapTimeStarted );
 	sv.demosPruned = qfalse;

@@ -605,7 +605,7 @@ Ghoul2 Insert End
 	Cvar_Set( "sv_serverid", va("%i", sv.serverId ) );
 
 	// uniquely identifies a game
-	Cvar_Set( "sv_uniqueid", va( "%08x%08x", sv.serverId, sv.checksumFeed ) );
+	Cvar_Set( "sv_matchid", va( "%08x%08x", sv.serverId, sv.checksumFeed ) );
 
 	time( &sv.realMapTimeStarted );
 	sv.demosPruned = qfalse;
@@ -970,7 +970,7 @@ void SV_Init (void) {
 	// systeminfo
 	Cvar_Get ("sv_cheats", "1", CVAR_SYSTEMINFO | CVAR_ROM, "Allow cheats on server if set to 1" );
 	sv_serverid = Cvar_Get ("sv_serverid", "0", CVAR_SYSTEMINFO | CVAR_ROM );
-	sv_uniqueid = Cvar_Get( "sv_uniqueid", "", CVAR_ROM );
+	sv_matchid = Cvar_Get( "sv_matchid", "", CVAR_ROM );
 	sv_pure = Cvar_Get ("sv_pure", "0", CVAR_SYSTEMINFO, "Pure server" );
 	Cvar_Get ("sv_paks", "", CVAR_SYSTEMINFO | CVAR_ROM );
 	Cvar_Get ("sv_pakNames", "", CVAR_SYSTEMINFO | CVAR_ROM );

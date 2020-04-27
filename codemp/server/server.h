@@ -255,7 +255,7 @@ extern	cvar_t	*sv_killserver;
 extern	cvar_t	*sv_mapname;
 extern	cvar_t	*sv_mapChecksum;
 extern	cvar_t	*sv_serverid;
-extern	cvar_t	*sv_uniqueid;
+extern	cvar_t	*sv_matchid;
 extern	cvar_t	*sv_ratePolicy;
 extern	cvar_t	*sv_clientRate;
 extern	cvar_t	*sv_minRate;
