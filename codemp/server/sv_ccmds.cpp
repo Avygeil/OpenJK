@@ -255,9 +255,11 @@ static void SV_MapRestart_f( void ) {
 		return;
 	}
 
+#if 0
 	if ( sv.restartTime ) {
 		return;
 	}
+#endif
 
 	if (Cmd_Argc() > 1 ) {
 		delay = atoi( Cmd_Argv(1) );
@@ -265,9 +267,16 @@ static void SV_MapRestart_f( void ) {
 	else {
 		delay = 5;
 	}
+
 	if( delay ) {
-		sv.restartTime = sv.time + delay * 1000;
-		SV_SetConfigstring( CS_WARMUP, va("%i", sv.restartTime) );
+		if (delay > 0) {
+			sv.restartTime = sv.time + delay * 1000;
+			SV_SetConfigstring(CS_WARMUP, va("%i", sv.restartTime));
+		}
+		else { // allow negative argument to cancel a pending restart
+			sv.restartTime = 0;
+			SV_SetConfigstring(CS_WARMUP, "");
+		}
 		return;
 	}
 
