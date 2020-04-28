@@ -2791,6 +2791,10 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 		return 0;
 	}
 
+	case G_SET_CONFIGSTRING_NO_UPDATE:
+		SV_SetConfigstringReal( args[1], (const char*)VMA(2), qtrue );
+		return 0;
+
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %ld", (long int) args[0] );
 	}

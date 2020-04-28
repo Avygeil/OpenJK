@@ -109,7 +109,17 @@ SV_SetConfigstring
 
 ===============
 */
-void SV_SetConfigstring (int index, const char *val) {
+void SV_SetConfigstring( int index, const char* val ) {
+	SV_SetConfigstringReal( index, val, qfalse );
+}
+
+/*
+===============
+SV_SetConfigstring
+
+===============
+*/
+void SV_SetConfigstringReal( int index, const char* val, qboolean dontUpdateClients ) {
 	int		i;
 	client_t	*client;
 
@@ -129,6 +139,10 @@ void SV_SetConfigstring (int index, const char *val) {
 	// change the string in sv
 	Z_Free( sv.configstrings[index] );
 	sv.configstrings[index] = CopyString( val );
+
+	if ( dontUpdateClients ) {
+		return;
+	}
 
 	// send it to all the clients if we aren't
 	// spawning a new server
@@ -865,6 +879,7 @@ static void CM_SetUsingCache( qboolean usingCache ) { gbUsingCachedMapDataRightN
 //server stuff D:
 extern void SV_GetConfigstring( int index, char *buffer, int bufferSize );
 extern void SV_SetConfigstring( int index, const char *val );
+extern void SV_SetConfigstringReal( int index, const char* val, qboolean dontUpdateClients );
 
 static IHeapAllocator *GetG2VertSpaceServer( void ) {
 	return G2VertSpaceServer;
