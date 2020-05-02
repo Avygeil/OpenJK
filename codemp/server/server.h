@@ -362,6 +362,59 @@ void SV_ClientThink (client_t *cl, usercmd_t *cmd);
 void SV_WriteDownloadToClient( client_t *cl , msg_t *msg );
 
 //
+// sv_curl.cpp
+//
+typedef void ( *TrsfResultCallback )( trsfHandle_t, trsfErrorInfo_t*, int, void*, size_t, void* );
+
+void SV_CurlInit();
+void SV_CurlShutdown();
+
+void SV_RunTransfers();
+
+qboolean SV_SendGETRequest(trsfHandle_t* handle,
+	const char* url,
+	TrsfResultCallback resultCallback,
+	void* userdata = NULL,
+	const char* headerAccept = NULL,
+	const char* headerContentType = NULL,
+	qboolean nullTerminate = qtrue);
+qboolean SV_SendPOSTRequest(trsfHandle_t* handle,
+	const char* url,
+	const char* data,
+	TrsfResultCallback resultCallback = NULL,
+	void* userdata = NULL,
+	const char* headerAccept = NULL,
+	const char* headerContentType = NULL,
+	qboolean nullTerminate = qtrue);
+qboolean SV_SendMultipartPOSTRequest(trsfHandle_t* handle,
+	const char* url,
+	trsfFormPart_t* multiPart,
+	size_t numParts,
+	TrsfResultCallback resultCallback = NULL,
+	void* userdata = NULL,
+	const char* headerAccept = NULL,
+	const char* headerContentType = NULL,
+	qboolean nullTerminate = qtrue);
+
+qboolean SV_VM_SendGETRequest(trsfHandle_t* handle,
+	const char* url,
+	const char* headerAccept,
+	const char* headerContentType);
+qboolean SV_VM_SendPOSTRequest(trsfHandle_t* handle,
+	const char* url,
+	const char* data,
+	const char* headerAccept,
+	const char* headerContentType,
+	qboolean receiveResult);
+qboolean SV_VM_SendMultipartPOSTRequest(trsfHandle_t* handle,
+	const char* url,
+	trsfFormPart_t* multiPart,
+	size_t numParts,
+	const char* headerAccept,
+	const char* headerContentType,
+	qboolean receiveResult);
+
+//
 // sv_ccmds.c
 //
 void SV_Heartbeat_f( void );

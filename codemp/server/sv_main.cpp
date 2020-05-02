@@ -1253,6 +1253,9 @@ void SV_Frame( int msec ) {
 
 	// send a heartbeat to the master if needed
 	SV_MasterHeartbeat();
+
+	// run pending curl transfers
+	SV_RunTransfers();
 }
 
 //============================================================================

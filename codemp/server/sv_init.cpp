@@ -1089,6 +1089,9 @@ void SV_Init (void) {
 #ifdef DEDICATED
 	SV_InitRef();
 #endif
+
+	// init the libcurl backend
+	SV_CurlInit();
 }
 
 
@@ -1178,4 +1181,7 @@ Ghoul2 Insert Start
 	// disconnect any local clients
 	if( sv_killserver->integer != 2 )
 		CL_Disconnect( qfalse );
+
+	// shutdown the libcurl backend
+	SV_CurlShutdown();
 }

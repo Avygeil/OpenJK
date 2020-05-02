@@ -44,16 +44,19 @@ option(BuildMPGame "Whether to create projects for the MP server-side gamecode (
 # use Z_Malloc.
 
 set(UseInternalZlibDefault   OFF)
+set(UseInternalCurlDefault   OFF)
 
 if(WIN32)
   set(UseInternalZlibDefault   ON)
+  set(UseInternalCurlDefault   ON)
 endif()
 
 if(CMAKE_SYSTEM_NAME MATCHES "BSD")
   add_definitions(-DIOAPI_NO_64)
 endif()
 
-option(UseInternalZlib   "If set, use bundled zlib."    ${UseInternalZlibDefault})
+option(UseInternalZlib   "If set, use bundled zlib."       ${UseInternalZlibDefault})
+option(UseInternalCurl   "If set, use bundled libcurl."    ${UseInternalCurlDefault})
 
 # Custom CMake Modules needed
 list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_SOURCE_DIR}/CMakeModules")

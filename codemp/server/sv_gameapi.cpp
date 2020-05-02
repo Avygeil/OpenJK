@@ -401,6 +401,14 @@ int GVM_BG_GetItemIndexByTag( int tag, int type ) {
 	return ge->BG_GetItemIndexByTag( tag, type );
 }
 
+// base_enhanced
+
+void GVM_TransferResult(trsfHandle_t handle, trsfErrorInfo_t* errorInfo, int responseCode, void* data, size_t size) {
+	if (gvm->isLegacy) {
+		VM_Call(gvm, GAME_TRANSFER_RESULT, handle, reinterpret_cast<intptr_t>(errorInfo), responseCode, reinterpret_cast<intptr_t>(data), size);
+	}
+}
+
 //
 // game syscalls
 //	only used by legacy mods!
@@ -2794,6 +2802,15 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_SET_CONFIGSTRING_NO_UPDATE:
 		SV_SetConfigstringReal( args[1], (const char*)VMA(2), qtrue );
 		return 0;
+
+	case G_SEND_GET_REQUEST:
+		return SV_VM_SendGETRequest((trsfHandle_t*)VMA(1), (const char*)VMA(2), (const char*)VMA(3), (const char*)VMA(4));
+
+	case G_SEND_POST_REQUEST:
+		return SV_VM_SendPOSTRequest((trsfHandle_t*)VMA(1), (const char*)VMA(2), (const char*)VMA(3), (const char*)VMA(4), (const char*)VMA(5), (qboolean)args[6]);
+
+	case G_SEND_MULTIPART_POST_REQUEST:
+		return SV_VM_SendMultipartPOSTRequest((trsfHandle_t*)VMA(1), (const char*)VMA(2), (trsfFormPart_t*)VMA(3), (size_t)args[4], (const char*)VMA(5), (const char*)VMA(6), (qboolean)args[7]);
 
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %ld", (long int) args[0] );

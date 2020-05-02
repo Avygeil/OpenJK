@@ -169,6 +169,16 @@ if(BuildMPDed)
 	# Transparently use either bundled or system zlib.
 	list(APPEND MPEngineAndDedIncludeDirectories ${ZLIB_INCLUDE_DIR})
 	list(APPEND MPEngineAndDedLibraries          ${ZLIB_LIBRARIES})
+	
+	# libcurl
+	if(UseInternalCurl)
+		set(MPEngineAndDedLibraries ${MPEngineAndDedLibraries} ${OpenJKLibDir}/libcurl/lib/libcurl.lib)
+		set(MPEngineAndDedIncludeDirectories ${MPEngineAndDedIncludeDirectories} ${OpenJKLibDir}/libcurl/include)
+	else()
+		find_package(CURL REQUIRED)
+		set(MPEngineAndDedIncludeDirectories ${MPEngineAndDedIncludeDirectories} ${CURL_INCLUDE_DIRS})
+		set(MPEngineAndDedLibraries ${MPEngineAndDedLibraries} ${CURL_LIBRARIES})
+	endif()
 
 	set(MPEngineAndDedCgameFiles
 		"${MPDir}/cgame/cg_public.h"
@@ -301,6 +311,7 @@ if(BuildMPDed)
 		"${MPDir}/server/sv_ccmds.cpp"
 		"${MPDir}/server/sv_challenge.cpp"
 		"${MPDir}/server/sv_client.cpp"
+		"${MPDir}/server/sv_curl.cpp"
 		"${MPDir}/server/sv_game.cpp"
 		"${MPDir}/server/sv_init.cpp"
 		"${MPDir}/server/sv_main.cpp"
