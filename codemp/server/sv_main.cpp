@@ -71,6 +71,7 @@ cvar_t	*sv_autoDemoMaxMaps;
 cvar_t	*sv_legacyFixes;
 cvar_t	*sv_banFile;
 cvar_t	*sv_printFullConnect;
+cvar_t	*sv_printSlowFrames;
 
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;
@@ -1233,6 +1234,38 @@ void SV_Frame( int msec ) {
 
 		// let everything in the world think and move
 		GVM_RunFrame( sv.time );
+		if (!svs.lastTime) {
+			svs.lastTime = Sys_Milliseconds();
+		}
+		else {
+			int now = Sys_Milliseconds();
+			int diff = now - svs.lastTime;
+			if (!svs.lastSvFps) {
+				svs.lastSvFps = sv_fps->integer;
+			}
+			else if (svs.lastSvFps != sv_fps->integer) {
+				svs.lastTime = svs.totalFrameTime = svs.totalTicks = svs.numTicksAboveIdealFrameTime = svs.highFrameTime = svs.highFrameTimeTookPlaceAt = 0;
+				svs.lastFrameTimeIndex = -1;
+				memset(&svs.mostRecentFrameTimes, 0, sizeof(svs.mostRecentFrameTimes));
+				svs.lastSvFps = sv_fps->integer;
+			}
+
+			int svFps = Com_Clampi(1, 1000, sv_fps->integer);
+			svs.mostRecentFrameTimes[++svs.lastFrameTimeIndex % (svFps * TRACKED_FRAMETIME_SECONDS)] = diff;
+			svs.totalFrameTime += diff;
+			svs.totalTicks++;
+			int idealFrametime = 1000 / sv_fps->integer;
+			if (diff > idealFrametime) {
+				svs.numTicksAboveIdealFrameTime++;
+				if (sv_printSlowFrames->integer > 0 && diff > sv_printSlowFrames->integer)
+					Com_Printf("Frame took too long: %d ms frametime (should be %d)\n", diff, idealFrametime);
+			}
+			if (diff > svs.highFrameTime) {
+				svs.highFrameTime = diff;
+				svs.highFrameTimeTookPlaceAt = now;
+			}
+			svs.lastTime = now;
+		}
 	}
 
 	//rww - RAGDOLL_BEGIN

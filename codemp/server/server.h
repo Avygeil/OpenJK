@@ -214,6 +214,17 @@ typedef struct serverStatic_s {
 	netadr_t	authorizeAddress;			// for rcon return messages
 
 	qboolean	gameStarted;				// gvm is loaded
+
+	int			totalTicks;
+	int			totalFrameTime;
+	int			highFrameTime;
+	int			highFrameTimeTookPlaceAt;
+	int			numTicksAboveIdealFrameTime;
+	int			lastSvFps;
+#define TRACKED_FRAMETIME_SECONDS	(10)
+	int			mostRecentFrameTimes[TRACKED_FRAMETIME_SECONDS * 1000];
+	int			lastFrameTimeIndex;
+	int			lastTime;
 } serverStatic_t;
 
 #define SERVER_MAXBANS	1024
@@ -275,6 +286,7 @@ extern	cvar_t	*sv_autoDemoMaxMaps;
 extern	cvar_t	*sv_legacyFixes;
 extern	cvar_t	*sv_banFile;
 extern	cvar_t	*sv_printFullConnect;
+extern	cvar_t	*sv_printSlowFrames;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;

@@ -1068,6 +1068,55 @@ static void SV_FlushBans_f( void )
 	Com_Printf( "All bans and exceptions have been deleted.\n" );
 }
 
+static void SV_TickRate_f(void) {
+	if (!svs.gameStarted || !svs.totalTicks || !svs.totalFrameTime)
+		return; // ???
+
+	int svFps = Com_Clampi(1, 1000, sv_fps->integer);
+	if (svs.totalTicks < sv_fps->integer * 10) {
+		Com_Printf("Please wait a few seconds while data is collected.\n");
+		return;
+	}
+
+	// overall stats
+	double averageFrametime = (double)svs.totalFrameTime / (double)svs.totalTicks;
+	int ideal = 1000 / svFps;
+	double averageTickrate = 1000.0 / averageFrametime;
+	double percentAboveIdeal = ((double)svs.numTicksAboveIdealFrameTime / (double)svs.totalTicks) * 100.0;
+	char *secondsSinceHighStr = "never";
+	if (svs.highFrameTime)
+		secondsSinceHighStr = va("%d seconds ago", (Sys_Milliseconds() - svs.highFrameTimeTookPlaceAt) / 1000);
+
+	Com_Printf("sv_fps: %d\nAverage tickrate: %0.3f\nAverage frametime: %0.3f ms\nIdeal frametime: %d ms\nHighest frametime: %d ms (%s)\nNumber of ticks: %d\nNumber of ticks above ideal: %d (%0.3f percent)\n",
+		svFps, averageTickrate, averageFrametime, ideal, svs.highFrameTime, secondsSinceHighStr, svs.totalTicks, svs.numTicksAboveIdealFrameTime, percentAboveIdeal);
+
+	// recent stats
+	int recentFrametimes = 0, highestRecentFrametime = 0, numRecentOverIdeal = 0, recentFrametimesOverIdeal = 0;
+	for (int i = 0; i < svFps * TRACKED_FRAMETIME_SECONDS; i++) {
+		recentFrametimes += svs.mostRecentFrameTimes[i];
+		if (svs.mostRecentFrameTimes[i] > highestRecentFrametime)
+			highestRecentFrametime = svs.mostRecentFrameTimes[i];
+		if (svs.mostRecentFrameTimes[i] > ideal) {
+			recentFrametimesOverIdeal += svs.mostRecentFrameTimes[i];
+			numRecentOverIdeal++;
+		}
+
+	}
+	double recentAverageFrametime = (double)recentFrametimes / (double)(svFps * TRACKED_FRAMETIME_SECONDS);
+	double recentAverageTickrate = 1000.0 / recentAverageFrametime;
+	char *recentOverIdealAverageStr = "N/A";
+	if (numRecentOverIdeal)
+		recentOverIdealAverageStr = va("%0.3f", (double)recentFrametimesOverIdeal / (double)numRecentOverIdeal);
+
+	double standardDeviation = 0.0;
+	for (int i = 0; i < svFps * TRACKED_FRAMETIME_SECONDS; i++)
+		standardDeviation += pow((double)svs.mostRecentFrameTimes[i] - recentAverageFrametime, 2);
+	standardDeviation = sqrt(standardDeviation / (svFps * TRACKED_FRAMETIME_SECONDS));
+
+	Com_Printf("Average tickrate over last %d seconds: %0.3f\nAverage frametime over last %d seconds: %0.3f ms\nHighest frametime over last %d seconds: %d\nAverage above-ideal frametime over last %d seconds: %s\nStandard deviation over last %d seconds: %0.3f\n",
+		TRACKED_FRAMETIME_SECONDS, recentAverageTickrate, TRACKED_FRAMETIME_SECONDS, recentAverageFrametime, TRACKED_FRAMETIME_SECONDS, highestRecentFrametime, TRACKED_FRAMETIME_SECONDS, recentOverIdealAverageStr, TRACKED_FRAMETIME_SECONDS, standardDeviation);
+}
+
 static void SV_BanAddr_f( void )
 {
 	SV_AddBanToList( qfalse );
@@ -1978,6 +2027,7 @@ void SV_AddOperatorCommands( void ) {
 	Cmd_AddCommand ("sv_bandel", SV_BanDel_f, "Removes a ban" );
 	Cmd_AddCommand ("sv_exceptdel", SV_ExceptDel_f, "Removes a ban exception" );
 	Cmd_AddCommand ("sv_flushbans", SV_FlushBans_f, "Removes all bans and exceptions" );
+	Cmd_AddCommand("tickrate", SV_TickRate_f);
 }
 
 /*

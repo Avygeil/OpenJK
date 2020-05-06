@@ -1075,6 +1075,8 @@ void SV_Init (void) {
 
 	sv_printFullConnect = Cvar_Get( "sv_printFullConnect", "1", CVAR_ARCHIVE );
 
+	sv_printSlowFrames = Cvar_Get("sv_printSlowFrames", "0", CVAR_ARCHIVE);
+
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
 

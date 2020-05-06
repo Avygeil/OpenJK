@@ -42,6 +42,9 @@ static vm_t *gvm; // game vm, valid for legacy and new api
 //
 
 void GVM_InitGame( int levelTime, int randomSeed, int restart ) {
+	svs.lastTime = svs.totalFrameTime = svs.totalTicks = svs.numTicksAboveIdealFrameTime = svs.highFrameTime = svs.highFrameTimeTookPlaceAt = 0;
+	memset(&svs.mostRecentFrameTimes, 0, sizeof(svs.mostRecentFrameTimes));
+	svs.lastFrameTimeIndex = -1;
 	if ( gvm->isLegacy ) {
 		VM_Call( gvm, GAME_INIT, levelTime, randomSeed, restart );
 		return;
