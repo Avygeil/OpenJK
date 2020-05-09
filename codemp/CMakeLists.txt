@@ -170,6 +170,10 @@ if(BuildMPDed)
 	list(APPEND MPEngineAndDedIncludeDirectories ${ZLIB_INCLUDE_DIR})
 	list(APPEND MPEngineAndDedLibraries          ${ZLIB_LIBRARIES})
 	
+	# Transparently use our bundled sqlite.
+	list(APPEND MPEngineAndDedIncludeDirectories ${SQLITE_INCLUDE_DIRS})
+	list(APPEND MPEngineAndDedLibraries          ${SQLITE_LIBRARIES})
+	
 	# libcurl
 	if(UseInternalCurl)
 		set(MPEngineAndDedLibraries ${MPEngineAndDedLibraries} ${OpenJKLibDir}/libcurl/lib/libcurl.lib)
@@ -317,6 +321,7 @@ if(BuildMPDed)
 		"${MPDir}/server/sv_main.cpp"
 		"${MPDir}/server/sv_net_chan.cpp"
 		"${MPDir}/server/sv_snapshot.cpp"
+		"${MPDir}/server/sv_sqlite.cpp"
 		"${MPDir}/server/sv_world.cpp"
 		"${MPDir}/server/sv_gameapi.cpp"
 		"${MPDir}/server/sv_gameapi.h"

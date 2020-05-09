@@ -1094,6 +1094,9 @@ void SV_Init (void) {
 
 	// init the libcurl backend
 	SV_CurlInit();
+
+	// init the sqlite backend
+	SV_SQLiteInit();
 }
 
 
@@ -1186,4 +1189,7 @@ Ghoul2 Insert Start
 
 	// shutdown the libcurl backend
 	SV_CurlShutdown();
+
+	// shutdown the sqlite backend
+	SV_SQLiteShutdown();
 }

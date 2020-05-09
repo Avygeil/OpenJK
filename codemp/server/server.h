@@ -447,6 +447,12 @@ void SV_SendClientMessages( void );
 void SV_SendClientSnapshot( client_t *client );
 
 //
+// sv_sqlite.cpp
+//
+void SV_SQLiteInit( void );
+void SV_SQLiteShutdown( void );
+
+//
 // sv_game.c
 //
 int	SV_NumForGentity( sharedEntity_t *ent );

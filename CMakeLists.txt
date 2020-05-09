@@ -307,6 +307,9 @@ endif()
 # Always use bundled minizip (sets MINIZIP_{LIBRARIES,INCLUDE_DIR})
 add_subdirectory(lib/minizip)
 
+# Always use bundled sqlite (sets SQLITE__{LIBRARIES,INCLUDE_DIR})
+add_subdirectory(lib/sqlite)
+
 # Add projects
 add_subdirectory(${MPDir})
 
