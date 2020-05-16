@@ -699,13 +699,13 @@ void SVC_RemoteCommand( netadr_t from, msg_t *msg ) {
 	svs.redirectAddress = from;
 	Com_BeginRedirect (sv_outputbuf, SV_OUTPUTBUF_LENGTH, SV_FlushRedirect);
 
+	remaining[0] = 0;
+
 	if ( !strlen( sv_rconPassword->string ) ) {
 		Com_Printf ("No rconpassword set.\n");
 	} else if ( !valid ) {
 		Com_Printf ("Bad rconpassword.\n");
 	} else {
-		remaining[0] = 0;
-
 		// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=543
 		// get the command directly, "rcon <pass> <command>" to avoid quoting issues
 		// extract the command by walking
@@ -725,6 +725,10 @@ void SVC_RemoteCommand( netadr_t from, msg_t *msg ) {
 	}
 
 	Com_EndRedirect ();
+
+	if ( VALIDSTRING( remaining ) ) {
+		GVM_RconCommand( NET_AdrToString( from ), remaining );
+	}
 }
 
 /*

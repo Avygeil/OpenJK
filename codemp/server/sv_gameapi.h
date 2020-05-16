@@ -62,6 +62,7 @@ void		GVM_NAV_FindCombatPointWaypoints	( void );
 int			GVM_BG_GetItemIndexByTag			( int tag, int type );
 // base_enhanced
 void		GVM_TransferResult					( trsfHandle_t handle, trsfErrorInfo_t* errorInfo, int responseCode, void* data, size_t size );
+void		GVM_RconCommand						( const char* ip, const char* command );
 
 void SV_BindGame( void );
 void SV_UnbindGame( void );

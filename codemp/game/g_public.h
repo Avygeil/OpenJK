@@ -799,7 +799,8 @@ typedef enum gameExportLegacy_e {
 	GAME_GETITEMINDEXBYTAG,
 
 	// base_enhanced
-	GAME_TRANSFER_RESULT = 1337
+	GAME_TRANSFER_RESULT = 1337,
+	GAME_RCON_COMMAND
 } gameExportLegacy_t;
 
 typedef struct gameImport_s {

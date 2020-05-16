@@ -412,6 +412,12 @@ void GVM_TransferResult(trsfHandle_t handle, trsfErrorInfo_t* errorInfo, int res
 	}
 }
 
+void GVM_RconCommand(const char* ip, const char* command) {
+	if (gvm->isLegacy) {
+		VM_Call(gvm, GAME_RCON_COMMAND, reinterpret_cast<intptr_t>(ip), reinterpret_cast<intptr_t>(command));
+	}
+}
+
 //
 // game syscalls
 //	only used by legacy mods!
