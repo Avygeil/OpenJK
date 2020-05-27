@@ -244,6 +244,42 @@ const char *Q_stristr( const char *s, const char *find )
 	return s;
 }
 
+const char *Q_stristrclean(const char *haystack, const char *needle) {
+	if (!*needle) {
+		return haystack;
+	}
+	for (; *haystack; ++haystack) {
+
+		//ignore color characters
+		if (*haystack == '^' && *(haystack + 1) >= '0' && *(haystack + 1) <= '9') {
+			++haystack; //for loop will do the other increment (we need 2)
+			continue;
+		}
+
+		if (toupper(*haystack) == toupper(*needle)) {
+			// Matched starting char -- loop through remaining chars.
+			const char *h, *n;
+			for (h = haystack, n = needle; *h && *n; ++h, ++n)
+			{
+				//ignore color characters
+				if (*h == '^' && *(h + 1) >= '0' && *(h + 1) <= '9') {
+					++h; //for loop will do the other increment (we need 2)
+					--n;
+					continue;
+				}
+
+				if (toupper(*h) != toupper(*n)) {
+					break;
+				}
+			}
+			if (!*n) {// matched all of 'needle' to null termination 
+				return haystack; // return the start of the match 
+			}
+		}
+	}
+	return 0;
+}
+
 int Q_PrintStrlen( const char *string ) {
 	int			len;
 	const char	*p;

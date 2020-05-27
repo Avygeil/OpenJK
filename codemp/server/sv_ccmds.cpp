@@ -59,7 +59,6 @@ static client_t *SV_GetPlayerByHandle( void ) {
 	client_t	*cl;
 	int			i;
 	char		*s;
-	char		cleanName[64];
 
 	// make sure server is running
 	if ( !com_sv_running->integer ) {
@@ -90,24 +89,25 @@ static client_t *SV_GetPlayerByHandle( void ) {
 		}
 	}
 
-	// check for a name match
+	// check for a partial name match
+	client_t *found = nullptr;
 	for ( i=0, cl=svs.clients ; i < sv_maxclients->integer ; i++,cl++ ) {
 		if ( !cl->state ) {
 			continue;
 		}
-		if ( !Q_stricmp( cl->name, s ) ) {
-			return cl;
-		}
-
-		Q_strncpyz( cleanName, cl->name, sizeof(cleanName) );
-		Q_StripColor( cleanName );
-		//Q_CleanStr( cleanName );
-		if ( !Q_stricmp( cleanName, s ) ) {
-			return cl;
+		if (Q_stristrclean(cl->name, s)) {
+			if (found) {
+				found = nullptr;
+				break;
+			}
+			found = cl;
 		}
 	}
 
-	Com_Printf( "Player %s is not on the server\n", s );
+	if (found)
+		return found;
+
+	Com_Printf( "Player %s^7 not found or ambiguous. Use client number or be more specific.\n", s );
 
 	return NULL;
 }
@@ -1342,7 +1342,7 @@ static void SV_ConTell_f(void) {
 		return;
 	}
 
-	cl = SV_GetPlayerByNum();
+	cl = SV_GetPlayerByHandle();
 	if ( !cl ) {
 		return;
 	}
