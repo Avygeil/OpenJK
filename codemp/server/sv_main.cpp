@@ -72,6 +72,7 @@ cvar_t	*sv_legacyFixes;
 cvar_t	*sv_banFile;
 cvar_t	*sv_printFullConnect;
 cvar_t	*sv_printSlowFrames;
+cvar_t	*sv_countryDetection;
 
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;

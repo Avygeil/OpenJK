@@ -1077,6 +1077,8 @@ void SV_Init (void) {
 
 	sv_printSlowFrames = Cvar_Get("sv_printSlowFrames", "0", CVAR_ARCHIVE);
 
+	sv_countryDetection = Cvar_Get("sv_countryDetection", "1", CVAR_ARCHIVE);
+
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
 
@@ -1094,6 +1096,9 @@ void SV_Init (void) {
 
 	// init the libcurl backend
 	SV_CurlInit();
+
+	if (sv_countryDetection->integer)
+		GeoIP::Init();
 }
 
 
@@ -1186,4 +1191,6 @@ Ghoul2 Insert Start
 
 	// shutdown the libcurl backend
 	SV_CurlShutdown();
+
+	GeoIP::Shutdown();
 }

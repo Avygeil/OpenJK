@@ -2821,6 +2821,10 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_SEND_MULTIPART_POST_REQUEST:
 		return SV_VM_SendMultipartPOSTRequest((trsfHandle_t*)VMA(1), (const char*)VMA(2), (trsfFormPart_t*)VMA(3), (size_t)args[4], (const char*)VMA(5), (const char*)VMA(6), (qboolean)args[7]);
 
+	case G_GETCOUNTRY:
+		GeoIP::GetCountry((const char *)VMA(1), (char *)VMA(2), args[3]);
+		return 0;
+
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %ld", (long int) args[0] );
 	}

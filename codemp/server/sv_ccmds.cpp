@@ -1238,8 +1238,8 @@ static void SV_Status_f( void )
 	Com_Printf( "players : %i humans, %i bots (%i max)\n", humans, bots, sv_maxclients->integer - sv_privateClients->integer );
 	Com_Printf( "uptime  : %s\n", SV_CalcUptime() );
 
-	Com_Printf ("cl score ping name            address                                 rate \n");
-	Com_Printf ("-- ----- ---- --------------- --------------------------------------- -----\n");
+	Com_Printf ("cl score ping name            address               qport rate   country \n");
+	Com_Printf ("-- ----- ---- --------------- --------------------- ----- ------ ------------------------ \n");
 	for (i=0,cl=svs.clients ; i < sv_maxclients->integer ; i++,cl++)
 	{
 		if ( !cl->state )
@@ -1257,26 +1257,34 @@ static void SV_Status_f( void )
 		ps = SV_GameClientNum( i );
 		s = NET_AdrToString( cl->netchan.remoteAddress );
 
+		char country[256] = { 0 };
+		if (!(cl->gentity && cl->gentity->r.svFlags & SVF_BOT))
+			GeoIP::GetCountry(s, country, sizeof(country));
+
 		if (!avoidTruncation)
 		{
-			Com_Printf ("%2i %5i %s %-15.15s ^7%39s %5i\n",
+			Com_Printf ("%2i %5i %s %-15.15s ^7%21s %5i %6i %s\n",
 				i,
 				ps->persistant[PERS_SCORE],
 				state,
 				cl->name,
 				s,
-				cl->rate
+				cl->netchan.qport,
+				cl->rate,
+				country[0] ? country : ""
 				);
 		}
 		else
 		{
-			Com_Printf ("%2i %5i %s %s ^7%39s %5i\n",
+			Com_Printf ("%2i %5i %s %s ^7%21s %5i %6i %s\n",
 				i,
 				ps->persistant[PERS_SCORE],
 				state,
 				cl->name,
 				s,
-				cl->rate
+				cl->netchan.qport,
+				cl->rate,
+				country[0] ? country : ""
 				);
 		}
 	}

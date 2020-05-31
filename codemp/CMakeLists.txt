@@ -156,7 +156,7 @@ if(BuildMPDed)
 	set(MPEngineAndDedLibraries ${MPBotLib})
 	# Platform-specific libraries
 	if(WIN32)
-		set(MPEngineAndDedLibraries ${MPEngineAndDedLibraries} "winmm" "wsock32")
+		set(MPEngineAndDedLibraries ${MPEngineAndDedLibraries} "winmm" "wsock32" "Ws2_32")
 	endif(WIN32)
 
 	# Include directories
@@ -320,6 +320,11 @@ if(BuildMPDed)
 		"${MPDir}/server/sv_world.cpp"
 		"${MPDir}/server/sv_gameapi.cpp"
 		"${MPDir}/server/sv_gameapi.h"
+		"${MPDir}/server/sv_geoip.cpp"
+		"${MPDir}/server/maxminddb.c"
+		"${MPDir}/server/maxminddb.h"
+		"${MPDir}/server/maxminddb_config.h"
+		"${MPDir}/server/maxminddb-compat-util.h"
 		)
 	source_group("server" FILES ${MPEngineAndDedServerFiles})
 	set(MPEngineAndDedFiles ${MPEngineAndDedFiles} ${MPEngineAndDedServerFiles})
