@@ -801,7 +801,8 @@ typedef enum gameExportLegacy_e {
 
 	// base_enhanced
 	GAME_TRANSFER_RESULT = 1337,
-	GAME_RCON_COMMAND
+	GAME_RCON_COMMAND,
+	GAME_STATUS
 } gameExportLegacy_t;
 
 typedef struct gameImport_s {

@@ -418,6 +418,12 @@ void GVM_RconCommand(const char* ip, const char* command) {
 	}
 }
 
+void GVM_Status(void) {
+	if (gvm->isLegacy) {
+		VM_Call(gvm, GAME_STATUS);
+	}
+}
+
 //
 // game syscalls
 //	only used by legacy mods!

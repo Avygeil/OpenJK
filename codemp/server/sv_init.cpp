@@ -986,6 +986,7 @@ static void SV_InitRef( void ) {
 void SV_Init (void) {
 
 	time( &svs.startTime );
+	Cvar_Get("sv_startTime", va("%d", svs.startTime), CVAR_ROM | CVAR_TEMP);
 
 	SV_AddOperatorCommands ();
 

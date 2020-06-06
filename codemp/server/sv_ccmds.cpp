@@ -1171,124 +1171,13 @@ static const char *SV_CalcUptime( void ) {
 SV_Status_f
 ================
 */
-static void SV_Status_f( void )
-{
-	int				i, humans, bots;
-	client_t		*cl;
-	playerState_t	*ps;
-	const char		*s;
-	int				ping;
-	char			state[32];
-	qboolean		avoidTruncation = qfalse;
-
-	// make sure server is running
-	if ( !com_sv_running->integer )
-	{
+static void SV_Status_f( void ) {
+	if ( !com_sv_running->integer || !svs.gameStarted ) {
 		Com_Printf( "Server is not running.\n" );
 		return;
 	}
 
-	if ( Cmd_Argc() > 1 )
-	{
-		if (!Q_stricmp("notrunc", Cmd_Argv(1)))
-		{
-			avoidTruncation = qtrue;
-		}
-	}
-
-	humans = bots = 0;
-	for ( i = 0 ; i < sv_maxclients->integer ; i++ ) {
-		if ( svs.clients[i].state >= CS_CONNECTED ) {
-			if ( svs.clients[i].netchan.remoteAddress.type != NA_BOT ) {
-				humans++;
-			}
-			else {
-				bots++;
-			}
-		}
-	}
-
-#if defined(_WIN32)
-#define STATUS_OS "Windows"
-#elif defined(__linux__)
-#define STATUS_OS "Linux"
-#elif defined(MACOS_X)
-#define STATUS_OS "OSX"
-#else
-#define STATUS_OS "Unknown"
-#endif
-
-	const char *ded_table[] =
-	{
-		"listen",
-		"lan dedicated",
-		"public dedicated",
-	};
-
-	char hostname[MAX_HOSTNAMELENGTH] = { 0 };
-
-	Q_strncpyz( hostname, sv_hostname->string, sizeof(hostname) );
-	Q_StripColor( hostname );
-
-	Com_Printf( "hostname: %s^7\n", hostname );
-	Com_Printf( "version : %s %i\n", VERSION_STRING_DOTTED, PROTOCOL_VERSION );
-	Com_Printf( "game    : %s\n", FS_GetCurrentGameDir() );
-	Com_Printf( "udp/ip  : %s:%i os(%s) type(%s)\n", Cvar_VariableString( "net_ip" ), Cvar_VariableIntegerValue( "net_port" ), STATUS_OS, ded_table[com_dedicated->integer] );
-	Com_Printf( "map     : %s gametype(%i)\n", sv_mapname->string, sv_gametype->integer );
-	Com_Printf( "players : %i humans, %i bots (%i max)\n", humans, bots, sv_maxclients->integer - sv_privateClients->integer );
-	Com_Printf( "uptime  : %s\n", SV_CalcUptime() );
-
-	Com_Printf ("cl score ping name            address               qport rate   country \n");
-	Com_Printf ("-- ----- ---- --------------- --------------------- ----- ------ ------------------------ \n");
-	for (i=0,cl=svs.clients ; i < sv_maxclients->integer ; i++,cl++)
-	{
-		if ( !cl->state )
-			continue;
-
-		if ( cl->state == CS_CONNECTED )
-			Q_strncpyz( state, "CON ", sizeof( state ) );
-		else if ( cl->state == CS_ZOMBIE )
-			Q_strncpyz( state, "ZMB ", sizeof( state ) );
-		else {
-			ping = cl->ping < 9999 ? cl->ping : 9999;
-			Com_sprintf( state, sizeof(state), "%4i", ping );
-		}
-
-		ps = SV_GameClientNum( i );
-		s = NET_AdrToString( cl->netchan.remoteAddress );
-
-		char country[256] = { 0 };
-		if (!(cl->gentity && cl->gentity->r.svFlags & SVF_BOT))
-			GeoIP::GetCountry(s, country, sizeof(country));
-
-		if (!avoidTruncation)
-		{
-			Com_Printf ("%2i %5i %s %-15.15s ^7%21s %5i %6i %s\n",
-				i,
-				ps->persistant[PERS_SCORE],
-				state,
-				cl->name,
-				s,
-				cl->netchan.qport,
-				cl->rate,
-				country[0] ? country : ""
-				);
-		}
-		else
-		{
-			Com_Printf ("%2i %5i %s %s ^7%21s %5i %6i %s\n",
-				i,
-				ps->persistant[PERS_SCORE],
-				state,
-				cl->name,
-				s,
-				cl->netchan.qport,
-				cl->rate,
-				country[0] ? country : ""
-				);
-		}
-	}
-	Com_Printf ("\n");
+	GVM_Status();
 }
 
 char	*SV_ExpandNewlines( char *in );
