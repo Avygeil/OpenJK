@@ -108,6 +108,9 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <limits.h>
 #include <errno.h>
 #include <stddef.h>
+#include <array>
+#include <sstream>
+#include <regex>
 
 //Ignore __attribute__ on non-gcc platforms
 #if !defined(__GNUC__) && !defined(__attribute__)

@@ -1117,6 +1117,101 @@ static void SV_TickRate_f(void) {
 		TRACKED_FRAMETIME_SECONDS, recentAverageTickrate, TRACKED_FRAMETIME_SECONDS, recentAverageFrametime, TRACKED_FRAMETIME_SECONDS, highestRecentFrametime, TRACKED_FRAMETIME_SECONDS, recentOverIdealAverageStr, TRACKED_FRAMETIME_SECONDS, standardDeviation);
 }
 
+extern std::vector<badRconAddr_t> badRcons;
+
+void SV_RehashRconBans_f(void) {
+	badRcons.clear();
+
+	if (!VALIDSTRING(sv_rconBanFile->string))
+		return;
+
+	char filepath[MAX_QPATH];
+	Com_sprintf(filepath, sizeof(filepath), "%s/%s", FS_GetCurrentGameDir(), sv_rconBanFile->string);
+
+	int filelen = 0, numRehashed = 0;
+	fileHandle_t readfrom;
+	if ((filelen = FS_SV_FOpenFileRead(filepath, &readfrom)) >= 0) {
+		if (filelen < 2) { // Don't bother if file is too short.
+			FS_FCloseFile(readfrom);
+			return;
+		}
+
+		char *textbuf = (char *)Z_Malloc(filelen, TAG_TEMP_WORKSPACE);
+
+		FS_Read(textbuf, filelen, readfrom);
+		FS_FCloseFile(readfrom);
+
+		std::string fileString(textbuf);
+		std::istringstream fileStream(fileString);
+		std::string line;
+		while (std::getline(fileStream, line)) {
+			if (line.empty())
+				continue;
+			netadr_t tempAddr;
+			if (NET_StringToAdr(line.c_str(), &tempAddr)) {
+				badRconAddr_t newBad;
+				newBad.sentCount = newBad.sentTime = 0;
+				newBad.isBanned = true;
+				memcpy(newBad.ipBytes, tempAddr.ip, sizeof(newBad.ipBytes));
+				badRcons.push_back(newBad);
+				numRehashed++;
+			}
+		}
+
+		Z_Free(textbuf);
+	}
+
+	if (numRehashed)
+		Com_Printf("Rehashed %d address%s banned from using rcon\n", numRehashed, numRehashed == 1 ? "" : "es");
+	else
+		Com_Printf("No addresses banned from using rcon to rehash.\n");
+}
+
+void SV_RconUnban_f(void) {
+	if (Cmd_Argc() < 2) {
+		Com_Printf("Usage: rconunban <address>\n");
+		return;
+	}
+	char *s = Cmd_Argv(1);
+	if (!VALIDSTRING(s)) {
+		Com_Printf("Usage: rconunban <address>\n");
+		return;
+	}
+	netadr_t address;
+	if (!NET_StringToAdr(s, &address)) {
+		Com_Printf("Invalid address '%s'\nUsage: rconunban <address>\n", s);
+		return;
+	}
+
+	auto it = std::find_if(badRcons.begin(), badRcons.end(), [&](badRconAddr_t &bad) { return !memcmp(bad.ipBytes, address.ip, sizeof(bad.ipBytes)); });
+
+	if (it == badRcons.end() || !it->isBanned) {
+		Com_Printf("%s is already not banned.\n", s);
+		return;
+	}
+
+	badRcons.erase(it);
+	Com_Printf("Successfully unbanned %s from using rcon.\n", s);
+	SV_WriteRconBans();
+}
+
+void SV_RconBanlist_f(void) {
+	int numBanned = 0;
+	std::for_each(badRcons.begin(), badRcons.end(), [&](badRconAddr_t &bad) {
+		if (bad.isBanned) {
+			if (!numBanned)
+				Com_Printf("Addresses banned from using rcon:\n");
+			Com_Printf("%d.%d.%d.%d\n", bad.ipBytes[0], bad.ipBytes[1], bad.ipBytes[2], bad.ipBytes[3]);
+			numBanned++;
+		}
+		});
+
+	if (numBanned)
+		Com_Printf("Total addresses banned from using rcon: %d\n", numBanned);
+	else
+		Com_Printf("No addresses are currently banned from using rcon.\n");
+}
+
 static void SV_BanAddr_f( void )
 {
 	SV_AddBanToList( qfalse );
@@ -1925,6 +2020,9 @@ void SV_AddOperatorCommands( void ) {
 	Cmd_AddCommand ("sv_exceptdel", SV_ExceptDel_f, "Removes a ban exception" );
 	Cmd_AddCommand ("sv_flushbans", SV_FlushBans_f, "Removes all bans and exceptions" );
 	Cmd_AddCommand("tickrate", SV_TickRate_f);
+	Cmd_AddCommand("rconrehashbans", SV_RehashRconBans_f, "Reloads rcon banlist from file");
+	Cmd_AddCommand("rconunban", SV_RconUnban_f, "Unbans an address from using rcon");
+	Cmd_AddCommand("rconbanlist", SV_RconBanlist_f, "Lists addresses banned from using rcon");
 }
 
 /*

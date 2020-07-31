@@ -75,11 +75,8 @@ void SV_GetChallenge( netadr_t from ) {
 	}
 
 	// Prevent using getchallenge as an amplifier
-	if ( SVC_RateLimitAddress( from, 10, 1000 ) ) {
-		if ( com_developer->integer ) {
-			Com_Printf( "SV_GetChallenge: rate limit from %s exceeded, dropping request\n",
-				NET_AdrToString( from ) );
-		}
+	if ( SVC_RateLimitAddress( from, sv_rateLimit_getInfoStatusChallenge_limit->integer, sv_rateLimit_getInfoStatusChallenge_period->integer) ) {
+		SV_LogSecurityEvent(from, "SV_GetChallenge: rate limit exceeded", NULL);
 		return;
 	}
 
@@ -198,6 +195,139 @@ void FilterStringedName(char *userinfo) {
 	*(nameInInfo + 2) = ' ';
 }
 
+static bool RegexMatches(const char *userinfo, std::string expression) {
+	std::string userinfoString(userinfo);
+	std::regex exp(expression);
+	std::smatch match;
+
+	std::regex_search(userinfoString, match, exp);
+	if (match.empty())
+		return false;
+
+	return true;
+}
+
+static const char *BannedByRegex(const char *userinfo) {
+	if (!VALIDSTRING(sv_bannedUserinfoRegexAny->string) && !VALIDSTRING(sv_bannedUserinfoRegexAll->string))
+		return nullptr;
+
+	// remove colors
+	size_t len = strlen(userinfo);
+	std::unique_ptr<char[]> cleaned(new char[len + 1]);
+	Q_strncpyz(cleaned.get(), userinfo, len + 1);
+	Q_CleanStr(cleaned.get());
+
+	if (VALIDSTRING(sv_bannedUserinfoRegexAny->string)) {
+		std::string s(sv_bannedUserinfoRegexAny->string);
+		std::string delim = "\\\\\\\\";
+
+		size_t start = 0, end = s.find(delim);
+		while (end != std::string::npos) {
+			std::string thisExpression(s.substr(start, end - start));
+			if (!thisExpression.empty() && RegexMatches(cleaned.get(), thisExpression))
+				return va("Any expression: %s", thisExpression.c_str());
+			start = end + delim.length();
+			end = s.find(delim, start);
+		}
+
+		// last one
+		std::string thisExpression(s.substr(start, end));
+		if (!thisExpression.empty() && RegexMatches(cleaned.get(), thisExpression))
+			return va("Any expression: %s", thisExpression.c_str());
+	}
+
+	if (VALIDSTRING(sv_bannedUserinfoRegexAll->string)) {
+		std::string s(sv_bannedUserinfoRegexAll->string);
+		std::string delim = "\\\\\\\\";
+
+		size_t start = 0, end = s.find(delim);
+		while (end != std::string::npos) {
+			std::string thisExpression(s.substr(start, end - start));
+			if (!(!thisExpression.empty() && RegexMatches(cleaned.get(), thisExpression)))
+				return nullptr;
+			start = end + delim.length();
+			end = s.find(delim, start);
+		}
+
+		// last one
+		std::string thisExpression(s.substr(start, end));
+		if (!(!thisExpression.empty() && RegexMatches(cleaned.get(), thisExpression)))
+			return nullptr;
+
+		return va("All expressions: %s", sv_bannedUserinfoRegexAll->string);
+	}
+
+	return nullptr;
+}
+
+static bool BannedByCountry(netadr_t from, const char *clientCountry) {
+	if (!VALIDSTRING(sv_bannedCountries->string) || NET_IsLocalAddress(from) || !VALIDSTRING(clientCountry))
+		return false;
+
+	std::string s(sv_bannedCountries->string);
+	std::string delim = "\\\\\\\\";
+
+	size_t start = 0, end = s.find(delim);
+	while (end != std::string::npos) {
+		std::string thisBannedCountry(s.substr(start, end - start));
+		if (!thisBannedCountry.empty() && Q_stristrclean(clientCountry, thisBannedCountry.c_str()))
+			return true;
+		start = end + delim.length();
+		end = s.find(delim, start);
+	}
+
+	// last one
+	std::string thisBannedCountry(s.substr(start, end));
+	if (!thisBannedCountry.empty() && Q_stristrclean(clientCountry, thisBannedCountry.c_str()))
+		return true;
+
+	return false;
+}
+
+static const char *BannedByUserinfoStrings(const char *userinfo) {
+	if (VALIDSTRING(sv_bannedUserinfoStringsAny->string)) {
+		std::string s(sv_bannedUserinfoStringsAny->string);
+		std::string delim = "\\\\\\\\";
+
+		size_t start = 0, end = s.find(delim);
+		while (end != std::string::npos) {
+			std::string thisBannedString(s.substr(start, end - start));
+			if (!thisBannedString.empty() && Q_stristrclean(userinfo, thisBannedString.c_str()))
+				return va("Any string: %s", thisBannedString.c_str());
+			start = end + delim.length();
+			end = s.find(delim, start);
+		}
+
+		// last one
+		std::string thisBannedString(s.substr(start, end));
+		if (!thisBannedString.empty() && Q_stristrclean(userinfo, thisBannedString.c_str()))
+			return va("Any string: %s", thisBannedString.c_str());
+	}
+
+	if (VALIDSTRING(sv_bannedUserinfoStringsAll->string)) {
+		std::string s(sv_bannedUserinfoStringsAll->string);
+		std::string delim = "\\\\";
+
+		size_t start = 0, end = s.find(delim);
+		while (end != std::string::npos) {
+			std::string thisBannedString(s.substr(start, end - start));
+			if (thisBannedString.empty() || !Q_stristrclean(userinfo, thisBannedString.c_str()))
+				return nullptr;
+			start = end + delim.length();
+			end = s.find(delim, start);
+		}
+
+		// last one
+		std::string thisBannedString(s.substr(start, end));
+		if (thisBannedString.empty() || !Q_stristrclean(userinfo, thisBannedString.c_str()))
+			return nullptr;
+
+		return va("All strings: %s", sv_bannedUserinfoStringsAll->string);
+	}
+
+	return nullptr;
+}
+
 /*
 ==================
 SV_DirectConnect
@@ -223,21 +353,64 @@ void SV_DirectConnect( netadr_t from ) {
 
 	Com_DPrintf ("SVC_DirectConnect ()\n");
 
+	Q_strncpyz(userinfo, Cmd_Argv(1), sizeof(userinfo));
+	FilterStringedName(userinfo);
+
+	char country[128] = { 0 };
+	if (NET_IsLocalAddress(from)) {
+		Q_strncpyz(country, "Local address", sizeof(country));
+	}
+	else {
+		const char *ipStr = NET_AdrToString(from);
+		GeoIP::GetCountry(ipStr, country, sizeof(country));
+		if (!country[0])
+			Q_strncpyz(country, "Unknown country", sizeof(country));
+	}
+
+	if (IsBannedFromRcon(from))
+		SV_LogSecurityEvent(from, "Connection from address that is banned from using rcon", va("Country: %s, Userinfo: %s", country, userinfo));
+
 	// Check whether this client is banned.
+	static leakyBucket_t goodBucket, neutralBucket, badBucket;
 	if ( SV_IsBanned( &from, qfalse ) )
 	{
-		NET_OutOfBandPrint( NS_SERVER, from, "print\nYou are banned from this server.\n" );
-		Com_DPrintf( "    rejected connect from %s (banned)\n", NET_AdrToString(from) );
+		SV_LogSecurityEvent(from, "Rejected connection: banned", va("Country: %s, Userinfo: %s", country, userinfo));
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer))
+			NET_OutOfBandPrint( NS_SERVER, from, "print\nYou are banned from this server.\n" );
 		return;
 	}
 
-	Q_strncpyz( userinfo, Cmd_Argv(1), sizeof(userinfo) );
-	FilterStringedName(userinfo);
-
 	version = atoi( Info_ValueForKey( userinfo, "protocol" ) );
 	if ( version != PROTOCOL_VERSION ) {
-		NET_OutOfBandPrint( NS_SERVER, from, "print\nServer uses protocol version %i (yours is %i).\n", PROTOCOL_VERSION, version );
-		Com_DPrintf ("    rejected connect from version %i\n", version);
+		SV_LogSecurityEvent(from, "Rejected connection: incorrect protocol", va("Country: %s, Userinfo: %s", country, userinfo));
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer))
+			NET_OutOfBandPrint( NS_SERVER, from, "print\nServer uses protocol version %i (yours is %i).\n", PROTOCOL_VERSION, version );
+		return;
+	}
+
+	// check if their country is banned
+	if (BannedByCountry(from, country)) {
+		SV_LogSecurityEvent(from, "Rejected connection: banned country", va("Country: %s, Userinfo: %s", country, userinfo));
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer))
+			NET_OutOfBandPrint(NS_SERVER, from, "print\nYou are banned from this server.\n");
+		return;
+	}
+	
+	// check if any strings in their userinfo are banned
+	const char *bannedByUserinfoStringsReason = BannedByUserinfoStrings(userinfo);
+	if (VALIDSTRING(bannedByUserinfoStringsReason)) {
+		SV_LogSecurityEvent(from, "Rejected connection: banned userinfo string", va("%s, Country: %s, Userinfo: %s", bannedByUserinfoStringsReason, country, userinfo));
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer))
+			NET_OutOfBandPrint(NS_SERVER, from, "print\nYou are banned from this server.\n");
+		return;
+	}
+
+	// check if anything in their userinfo is banned by regex
+	const char *bannedByRegexReason = BannedByRegex(userinfo);
+	if (VALIDSTRING(bannedByRegexReason)) {
+		SV_LogSecurityEvent(from, "Rejected connection: banned userinfo regex match", va("%s, Country: %s, Userinfo: %s", bannedByRegexReason, country, userinfo));
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer))
+			NET_OutOfBandPrint(NS_SERVER, from, "print\nYou are banned from this server.\n");
 		return;
 	}
 
@@ -261,8 +434,9 @@ void SV_DirectConnect( netadr_t from ) {
 			|| from.port == cl->netchan.remoteAddress.port ) ) {
 			if (( svs.time - cl->lastConnectTime)
 				< (sv_reconnectlimit->integer * 1000)) {
-				NET_OutOfBandPrint( NS_SERVER, from, "print\nReconnect rejected : too soon\n" );
-				Com_DPrintf ("%s:reconnect rejected : too soon\n", NET_AdrToString (from));
+				SV_LogSecurityEvent(from, "Rejected connection: too soon", va("Country: %s, Userinfo: %s", country, userinfo));
+				if (!SVC_RateLimit(&neutralBucket, sv_rateLimit_neutral_limit->integer, sv_rateLimit_neutral_period->integer))
+					NET_OutOfBandPrint( NS_SERVER, from, "print\nReconnect rejected : too soon\n" );
 				return;
 			}
 			break;
@@ -275,9 +449,12 @@ void SV_DirectConnect( netadr_t from ) {
 	else
 		ip = (char *)NET_AdrToString( from );
 	if( ( strlen( ip ) + strlen( userinfo ) + 4 ) >= MAX_INFO_STRING ) {
-		NET_OutOfBandPrint( NS_SERVER, from,
-			"print\nUserinfo string length exceeded.  "
-			"Try removing setu cvars from your config.\n" );
+		SV_LogSecurityEvent(from, "Rejected connection: userinfo too long", va("Country: %s, Userinfo: %s", country, userinfo));
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer)) {
+			NET_OutOfBandPrint(NS_SERVER, from,
+				"print\nUserinfo string length exceeded.  "
+				"Try removing setu cvars from your config.\n");
+		}
 		return;
 	}
 	Info_SetValueForKey( userinfo, "ip", ip );
@@ -288,7 +465,9 @@ void SV_DirectConnect( netadr_t from ) {
 		// Verify the received challenge against the expected challenge
 		if (!SV_VerifyChallenge(challenge, from))
 		{
-			NET_OutOfBandPrint( NS_SERVER, from, "print\nIncorrect challenge for your address.\n" );
+			SV_LogSecurityEvent(from, "Rejected connection: incorrect challenge for address", va("Country: %s, Userinfo: %s", country, userinfo));
+			if (!SVC_RateLimit(&neutralBucket, sv_rateLimit_neutral_limit->integer, sv_rateLimit_neutral_period->integer))
+				NET_OutOfBandPrint( NS_SERVER, from, "print\nIncorrect challenge for your address.\n" );
 			return;
 		}
 	}
@@ -363,9 +542,12 @@ void SV_DirectConnect( netadr_t from ) {
 			}
 		}
 		else {
-			const char *SV_GetStringEdString(char *refSection, char *refName);
-			NET_OutOfBandPrint( NS_SERVER, from, va("print\n%s\n", SV_GetStringEdString("MP_SVGAME","SERVER_IS_FULL")));
-			Com_DPrintf ("Rejected a connection.\n");
+			SV_LogSecurityEvent(from, "Rejected connection: server is full", va("Country: %s, Userinfo: %s", country, userinfo));
+
+			if (!SVC_RateLimit(&goodBucket, sv_rateLimit_good_limit->integer, sv_rateLimit_good_period->integer)) {
+				const char *SV_GetStringEdString(char *refSection, char *refName);
+				NET_OutOfBandPrint(NS_SERVER, from, va("print\n%s\n", SV_GetStringEdString("MP_SVGAME", "SERVER_IS_FULL")));
+			}
 
 			// notify the in game clients that someone is trying to connect
 			if ( ShouldLogFullServerConnect( from ) ) {
@@ -402,8 +584,11 @@ gotnewcl:
 	// get the game a chance to reject this connection or modify the userinfo
 	denied = GVM_ClientConnect( clientNum, qtrue, qfalse ); // firstTime = qtrue
 	if ( denied ) {
-		NET_OutOfBandPrint( NS_SERVER, from, "print\n%s\n", denied );
-		Com_DPrintf ("Game rejected a connection: %s.\n", denied);
+		SV_LogSecurityEvent(from, "Rejected connection: rejected by game code", va("Reason: %s, Country: %s, Userinfo: %s", denied, country, userinfo));
+
+		if (!SVC_RateLimit(&badBucket, sv_rateLimit_bad_limit->integer, sv_rateLimit_bad_period->integer))
+			NET_OutOfBandPrint( NS_SERVER, from, "print\n%s\n", denied );
+
 		return;
 	}
 

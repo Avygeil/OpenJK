@@ -1080,6 +1080,35 @@ void SV_Init (void) {
 
 	sv_countryDetection = Cvar_Get("sv_countryDetection", "1", CVAR_ARCHIVE);
 
+	sv_rateLimit_good_limit = Cvar_Get("sv_rateLimit_good_limit", "10", CVAR_ARCHIVE);
+	sv_rateLimit_good_period = Cvar_Get("sv_rateLimit_good_period", "2000", CVAR_ARCHIVE);
+
+	sv_rateLimit_neutral_limit = Cvar_Get("sv_rateLimit_neutral_limit", "5", CVAR_ARCHIVE);
+	sv_rateLimit_neutral_period = Cvar_Get("sv_rateLimit_neutral_period", "5000", CVAR_ARCHIVE);
+
+	sv_rateLimit_bad_limit = Cvar_Get("sv_rateLimit_bad_limit", "1", CVAR_ARCHIVE);
+	sv_rateLimit_bad_period = Cvar_Get("sv_rateLimit_bad_period", "10000", CVAR_ARCHIVE);
+
+	sv_rateLimit_getInfoStatusChallenge_limit = Cvar_Get("sv_rateLimit_getInfoStatusChallenge_limit", "10", CVAR_ARCHIVE);
+	sv_rateLimit_getInfoStatusChallenge_period = Cvar_Get("sv_rateLimit_getInfoStatusChallenge_period", "100", CVAR_ARCHIVE);
+
+	sv_rateLimit_getInfoStatusPerAddress_limit = Cvar_Get("sv_rateLimit_getInfoStatusPerAddress_limit", "10", CVAR_ARCHIVE);
+	sv_rateLimit_getInfoStatusPerAddress_period = Cvar_Get("sv_rateLimit_getInfoStatusPerAddress_period", "1000", CVAR_ARCHIVE);
+
+	sv_badRconBan_attempts = Cvar_Get("sv_badRconBan_attempts", "4", CVAR_ARCHIVE);
+	sv_badRconBan_period = Cvar_Get("sv_badRconBan_period", "86400000", CVAR_ARCHIVE);
+	sv_rconBanFile = Cvar_Get("sv_rconBanFile", "rconbans.dat", CVAR_ARCHIVE, "File to use to store rcon bans");
+
+	sv_bannedCountries = Cvar_Get("sv_bannedCountries", "", CVAR_ARCHIVE, "e.g. Country 1 Name\\\\\\\\Country 2 Name (separate multiple countries with quadruple backspaces)");
+
+	sv_bannedUserinfoStringsAny = Cvar_Get("sv_bannedUserinfoStringsAny", "", CVAR_ARCHIVE, "e.g. name\\skywalker\\\\\\\\model\\reelo (colors are ignored; separate multiple strings with quadruple backspaces)");
+	sv_bannedUserinfoStringsAll = Cvar_Get("sv_bannedUserinfoStringsAll", "", CVAR_ARCHIVE, "e.g. name\\skywalker\\\\\\\\model\\reelo (colors are ignored; separate multiple strings with quadruple backspaces)");
+
+	sv_bannedUserinfoRegexAny = Cvar_Get("sv_bannedUserinfoRegexAny", "", CVAR_ARCHIVE, "e.g. name\\\\skyw.lk.r\\\\\\\\model\\\\re+lo (colors are ignored; separate multiple expressions with quadruple backspaces)");
+	sv_bannedUserinfoRegexAll = Cvar_Get("sv_bannedUserinfoRegexAll", "", CVAR_ARCHIVE, "e.g. name\\\\skyw.lk.r\\\\\\\\model\\\\re+lo (colors are ignored; separate multiple expressions with quadruple backspaces)");
+
+	sv_securityEventPollingRate = Cvar_Get("sv_securityEventPollingRate", "1000", CVAR_ARCHIVE);
+
 	// initialize bot cvars so they are listed and can be set before loading the botlib
 	SV_BotInitCvars();
 
@@ -1087,7 +1116,7 @@ void SV_Init (void) {
 	SV_BotInitBotLib();
 
 	// Load saved bans
-	Cbuf_AddText("sv_rehashbans\n");
+	Cbuf_AddText("sv_rehashbans\nrconrehashbans\n");
 
 	// Only allocated once, no point in moving it around and fragmenting
 	// create a heap for Ghoul2 to use for game side model vertex transforms used in collision detection

@@ -285,9 +285,38 @@ extern	cvar_t	*sv_autoDemoBots;
 extern	cvar_t	*sv_autoDemoMaxMaps;
 extern	cvar_t	*sv_legacyFixes;
 extern	cvar_t	*sv_banFile;
+extern	cvar_t	*sv_rconBanFile;
 extern	cvar_t	*sv_printFullConnect;
 extern	cvar_t	*sv_printSlowFrames;
 extern	cvar_t	*sv_countryDetection;
+
+extern	cvar_t	*sv_rateLimit_good_limit;
+extern	cvar_t	*sv_rateLimit_good_period;
+
+extern	cvar_t	*sv_rateLimit_neutral_limit;
+extern	cvar_t	*sv_rateLimit_neutral_period;
+
+extern	cvar_t	*sv_rateLimit_bad_limit;
+extern	cvar_t	*sv_rateLimit_bad_period;
+
+extern	cvar_t	*sv_rateLimit_getInfoStatusChallenge_limit;
+extern	cvar_t	*sv_rateLimit_getInfoStatusChallenge_period;
+
+extern	cvar_t	*sv_rateLimit_getInfoStatusPerAddress_limit;
+extern	cvar_t	*sv_rateLimit_getInfoStatusPerAddress_period;
+
+extern	cvar_t	*sv_badRconBan_attempts;
+extern	cvar_t	*sv_badRconBan_period;
+
+extern	cvar_t	*sv_bannedCountries;
+
+extern	cvar_t	*sv_bannedUserinfoStringsAny;
+extern	cvar_t	*sv_bannedUserinfoStringsAll;
+
+extern	cvar_t	*sv_bannedUserinfoRegexAny;
+extern	cvar_t	*sv_bannedUserinfoRegexAll;
+
+extern	cvar_t	*sv_securityEventPollingRate;
 
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;
@@ -319,6 +348,8 @@ qboolean SVC_RateLimit( leakyBucket_t *bucket, int burst, int period );
 qboolean SVC_RateLimitAddress( netadr_t from, int burst, int period );
 void SV_FinalMessage (char *message);
 void QDECL SV_SendServerCommand( client_t *cl, const char *fmt, ...);
+void SV_LogSecurityEvent(netadr_t address, const char *description, const char *details);
+bool IsBannedFromRcon(netadr_t from);
 
 
 void SV_AddOperatorCommands (void);
@@ -436,6 +467,15 @@ void SV_StopRecordDemo( client_t *cl );
 void SV_AutoRecordDemo( client_t *cl );
 void SV_StopAutoRecordDemos();
 void SV_BeginAutoRecordDemos();
+
+typedef struct {
+	byte			ipBytes[4];
+	bool			isBanned;
+	int				sentTime;
+	int				sentCount;
+} badRconAddr_t;
+
+void SV_WriteRconBans(void);
 
 //
 // sv_snapshot.c

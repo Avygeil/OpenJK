@@ -689,7 +689,7 @@ FIXME: make this buffer size safe someday
 ============
 */
 #define	MAX_VA_STRING	32000
-#define MAX_VA_BUFFERS 4
+#define MAX_VA_BUFFERS 8
 
 char * QDECL va( const char *format, ... )
 {
@@ -699,7 +699,7 @@ char * QDECL va( const char *format, ... )
 	char		*buf;
 
 	va_start( argptr, format );
-	buf = (char *)&string[index++ & 3];
+	buf = (char *)&string[index++ & (MAX_VA_BUFFERS - 1)];
 	Q_vsnprintf( buf, sizeof(*string), format, argptr );
 	va_end( argptr );
 

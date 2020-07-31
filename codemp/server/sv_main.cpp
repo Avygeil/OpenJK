@@ -70,9 +70,38 @@ cvar_t	*sv_autoDemoBots;
 cvar_t	*sv_autoDemoMaxMaps;
 cvar_t	*sv_legacyFixes;
 cvar_t	*sv_banFile;
+cvar_t	*sv_rconBanFile;
 cvar_t	*sv_printFullConnect;
 cvar_t	*sv_printSlowFrames;
 cvar_t	*sv_countryDetection;
+
+cvar_t	*sv_rateLimit_good_limit;
+cvar_t	*sv_rateLimit_good_period;
+
+cvar_t	*sv_rateLimit_neutral_limit;
+cvar_t	*sv_rateLimit_neutral_period;
+
+cvar_t	*sv_rateLimit_bad_limit;
+cvar_t	*sv_rateLimit_bad_period;
+
+cvar_t	*sv_rateLimit_getInfoStatusChallenge_limit;
+cvar_t	*sv_rateLimit_getInfoStatusChallenge_period;
+
+cvar_t	*sv_rateLimit_getInfoStatusPerAddress_limit;
+cvar_t	*sv_rateLimit_getInfoStatusPerAddress_period;
+
+cvar_t	*sv_badRconBan_attempts;
+cvar_t	*sv_badRconBan_period;
+
+cvar_t	*sv_bannedCountries;
+
+cvar_t	*sv_bannedUserinfoStringsAny;
+cvar_t	*sv_bannedUserinfoStringsAll;
+
+cvar_t	*sv_bannedUserinfoRegexAny;
+cvar_t	*sv_bannedUserinfoRegexAll;
+
+cvar_t	*sv_securityEventPollingRate;
 
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;
@@ -428,6 +457,9 @@ SVC_RateLimit
 ================
 */
 qboolean SVC_RateLimit( leakyBucket_t *bucket, int burst, int period ) {
+	if (burst <= 0 || period <= 0)
+		return qfalse;
+
 	if ( bucket != NULL ) {
 		int now = Sys_Milliseconds();
 		int interval = now - bucket->lastTime;
@@ -460,6 +492,9 @@ Rate limit for a particular address
 ================
 */
 qboolean SVC_RateLimitAddress( netadr_t from, int burst, int period ) {
+	if (burst <= 0 || period <= 0)
+		return qfalse;
+
 	leakyBucket_t *bucket = SVC_BucketForAddress( from, burst, period );
 
 	return SVC_RateLimit( bucket, burst, period );
@@ -492,18 +527,15 @@ void SVC_Status( netadr_t from ) {
 	*/
 
 	// Prevent using getstatus as an amplifier
-	if ( SVC_RateLimitAddress( from, 10, 1000 ) ) {
-		if ( com_developer->integer ) {
-			Com_Printf( "SVC_Status: rate limit from %s exceeded, dropping request\n",
-				NET_AdrToString( from ) );
-		}
+	if ( SVC_RateLimitAddress( from, sv_rateLimit_getInfoStatusPerAddress_limit->integer, sv_rateLimit_getInfoStatusPerAddress_period->integer) ) {
+		SV_LogSecurityEvent(from, "SVC_Status: rate limit exceeded for address", NULL);
 		return;
 	}
 
 	// Allow getstatus to be DoSed relatively easily, but prevent
 	// excess outbound bandwidth usage when being flooded inbound
-	if ( SVC_RateLimit( &outboundLeakyBucket, 10, 100 ) ) {
-		Com_DPrintf( "SVC_Status: rate limit exceeded, dropping request\n" );
+	if ( SVC_RateLimit( &outboundLeakyBucket, sv_rateLimit_getInfoStatusChallenge_limit->integer, sv_rateLimit_getInfoStatusChallenge_period->integer) ) {
+		SV_LogSecurityEvent(from, "SVC_Status: global rate limit exceeded", NULL);
 		return;
 	}
 
@@ -564,18 +596,15 @@ void SVC_Info( netadr_t from ) {
 	}
 
 	// Prevent using getinfo as an amplifier
-	if ( SVC_RateLimitAddress( from, 10, 1000 ) ) {
-		if ( com_developer->integer ) {
-			Com_Printf( "SVC_Info: rate limit from %s exceeded, dropping request\n",
-				NET_AdrToString( from ) );
-		}
+	if ( SVC_RateLimitAddress( from, sv_rateLimit_getInfoStatusPerAddress_limit->integer, sv_rateLimit_getInfoStatusPerAddress_period->integer) ) {
+		SV_LogSecurityEvent(from, "SVC_Info: rate limit exceeded for address", NULL);
 		return;
 	}
 
 	// Allow getinfo to be DoSed relatively easily, but prevent
 	// excess outbound bandwidth usage when being flooded inbound
-	if ( SVC_RateLimit( &outboundLeakyBucket, 10, 100 ) ) {
-		Com_DPrintf( "SVC_Info: rate limit exceeded, dropping request\n" );
+	if ( SVC_RateLimit( &outboundLeakyBucket, sv_rateLimit_getInfoStatusChallenge_limit->integer, sv_rateLimit_getInfoStatusChallenge_period->integer) ) {
+		SV_LogSecurityEvent(from, "SVC_Info: global rate limit exceeded", NULL);
 		return;
 	}
 
@@ -652,6 +681,146 @@ void SV_FlushRedirect( char *outputbuf ) {
 	NET_OutOfBandPrint( NS_SERVER, svs.redirectAddress, "print\n%s", outputbuf );
 }
 
+typedef struct {
+	netadr_t		address;
+	const char		*description;
+	std::string		details;
+} securityEvent_t;
+
+std::vector<securityEvent_t> securityEvents;
+
+static void PrintSecurityEvent(securityEvent_t qe, int numberOfOccurences, int numUniqueIps, int numUniqueDetails) {
+	if (numberOfOccurences <= 0)
+		return; // shouldn't happen
+
+	Com_Printf("%s""ecurity event%s from %s: %s^7\n",
+		numberOfOccurences == 1 ? "S" : va("%d s", numberOfOccurences),
+		numberOfOccurences == 1 ? "" : "s",
+		numUniqueIps == 1 ? NET_AdrToString(qe.address) : va("%d addresses", numUniqueIps),
+		!qe.details.empty() && numUniqueDetails == 1 ? va("%s (%s)", qe.description, qe.details.c_str()) : qe.description);
+}
+
+void SV_LogSecurityEvent(netadr_t address, const char *description, const char *details) {
+	assert(VALIDSTRING(description));
+
+	securityEvent_t qe;
+	memcpy(&qe.address, &address, sizeof(qe.address));
+	qe.description = VALIDSTRING(description) ? description : "";
+	qe.details = VALIDSTRING(details) ? std::string(details) : std::string();
+
+	if (sv_securityEventPollingRate->integer <= 0)
+		PrintSecurityEvent(qe, 1, 1, 1); // allow them to print instantly if set to 0
+	else
+		securityEvents.push_back(qe);
+}
+
+// periodically check if there are any bad things to report
+static void PollSecurityEventsForPrinting(void) {
+	if (sv_securityEventPollingRate->integer <= 0)
+		return; // they are printing instantly from SV_LogSecurityEvent if this is set to 0; do nothing here
+
+	static int lastPrintTime = 0;
+	int now = Sys_Milliseconds();
+	if (now - lastPrintTime < sv_securityEventPollingRate->integer || !securityEvents.size())
+		return;
+
+	while (securityEvents.size() > 0) {
+		// pop one off
+		securityEvent_t qe = securityEvents.back();
+		securityEvents.pop_back();
+
+		// see if any others match it
+		int numTotal = 1, numUniqueIps = 1, numUniqueDetails = 1;
+		for (int i = securityEvents.size() - 1; i >= 0; i--) {
+			securityEvent_t thisQe = securityEvents[i];
+
+			if (!Q_stricmp(qe.description, thisQe.description)) {
+				// a match
+				numTotal++;
+				if (!NET_CompareAdr(qe.address, thisQe.address))
+					numUniqueIps++;
+				if (!qe.details.empty() && !thisQe.details.empty() && qe.details.compare(thisQe.details))
+					numUniqueDetails++;
+				securityEvents.pop_back();
+			}
+		}
+
+		// print one message that includes however many we got
+		PrintSecurityEvent(qe, numTotal, numUniqueIps, numUniqueDetails);
+	}
+	lastPrintTime = now;
+}
+
+std::vector<badRconAddr_t> badRcons;
+
+void SV_WriteRconBans(void) {
+	if (!VALIDSTRING(sv_rconBanFile->string))
+		return;
+
+	char filepath[MAX_QPATH];
+	Com_sprintf(filepath, sizeof(filepath), "%s/%s", FS_GetCurrentGameDir(), sv_rconBanFile->string);
+
+	fileHandle_t writeto;
+	if ((writeto = FS_SV_FOpenFileWrite(filepath)))
+	{
+		char writebuf[128];
+
+		for (auto & bad : badRcons) {
+			if (bad.isBanned) {
+				Com_sprintf(writebuf, sizeof(writebuf), "%d.%d.%d.%d\n", bad.ipBytes[0], bad.ipBytes[1], bad.ipBytes[2], bad.ipBytes[3]);
+				FS_Write(writebuf, strlen(writebuf), writeto);
+			}
+		}
+
+		FS_FCloseFile(writeto);
+	}
+}
+
+// returns true if they just got banned
+static bool BadRconAttempted(netadr_t from) {
+	if (sv_badRconBan_attempts->integer <= 0 || sv_badRconBan_period->integer <= 0)
+		return false;
+
+	int now = Sys_Milliseconds();
+
+	auto iterator = std::find_if(badRcons.begin(), badRcons.end(), [&](const badRconAddr_t &b) { return !memcmp(b.ipBytes, from.ip, sizeof(b.ipBytes)); });
+	if (iterator != badRcons.end()) {
+		bool exceeded = false;
+		if (iterator->sentTime && (now - iterator->sentTime) < sv_badRconBan_period->integer) { // we are in tracking day for current address, check limit
+			exceeded = (++iterator->sentCount >= sv_badRconBan_attempts->integer);
+		}
+		else { // this is the first and only attempt that has been sent in the last day
+			iterator->sentCount = 1;
+		}
+		iterator->sentTime = now;
+
+		if (exceeded) { // ban them
+			iterator->isBanned = true;
+			return true;
+		}
+
+		return false;
+	}
+
+	// didn't find one
+	badRconAddr_t newBad;
+	memcpy(&newBad.ipBytes, &from.ip, sizeof(newBad.ipBytes));
+	newBad.sentTime = now;
+	newBad.sentCount = 1;
+	newBad.isBanned = false;
+	badRcons.push_back(newBad);
+	return false;
+}
+
+bool IsBannedFromRcon(netadr_t from) {
+	auto it = std::find_if(badRcons.begin(), badRcons.end(), [&](const badRconAddr_t &b) { return !memcmp(b.ipBytes, from.ip, sizeof(b.ipBytes)); });
+
+	if (it != badRcons.end() && it->isBanned)
+		return true;
+
+	return false;
+}
+
 /*
 ===============
 SVC_RemoteCommand
@@ -662,39 +831,53 @@ Redirect all printfs
 ===============
 */
 void SVC_RemoteCommand( netadr_t from, msg_t *msg ) {
-	qboolean	valid;
 	char		remaining[1024];
 	// TTimo - scaled down to accumulate, but not overflow anything network wise, print wise etc.
 	// (OOB messages are the bottleneck here)
 #define	SV_OUTPUTBUF_LENGTH	(1024 - 16)
 	char		sv_outputbuf[SV_OUTPUTBUF_LENGTH];
-	char		*cmd_aux;
 
-	// Prevent using rcon as an amplifier and make dictionary attacks impractical
-	if ( SVC_RateLimitAddress( from, 10, 1000 ) ) {
-		if ( com_developer->integer ) {
-			Com_Printf( "SVC_RemoteCommand: rate limit from %s exceeded, dropping request\n",
-				NET_AdrToString( from ) );
-		}
+	// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=543
+	// get the command directly, "rcon <pass> <command>" to avoid quoting issues
+	// extract the command by walking
+	// since the cmd formatting can fuckup (amount of spaces), using a dumb step by step parsing
+	char *cmd_aux = Cmd_Cmd();
+	cmd_aux+=4;
+	while(cmd_aux[0]==' ')
+		cmd_aux++;
+	while(cmd_aux[0] && cmd_aux[0]!=' ') // password
+		cmd_aux++;
+	while(cmd_aux[0]==' ')
+		cmd_aux++;
+
+	char country[128] = { 0 };
+	if (NET_IsLocalAddress(from)) {
+		Q_strncpyz(country, "Local address", sizeof(country));
+	}
+	else {
+		const char *ipStr = NET_AdrToString(from);
+		GeoIP::GetCountry(ipStr, country, sizeof(country));
+		if (!country[0])
+			Q_strncpyz(country, "Unknown country", sizeof(country));
+	}
+
+	if (IsBannedFromRcon(from)) {
+		SV_LogSecurityEvent(from, "Address banned from rcon attempting to use rcon", va("Country: %s, Password: %s, Command: %s", country, Cmd_Argv(1), VALIDSTRING(cmd_aux) ? cmd_aux : "(none)"));
 		return;
 	}
 
-	if ( !strlen( sv_rconPassword->string ) ||
-		strcmp (Cmd_Argv(1), sv_rconPassword->string) ) {
-		static leakyBucket_t bucket;
-
-		// Make DoS via rcon impractical
-		if ( SVC_RateLimit( &bucket, 10, 1000 ) ) {
-			Com_DPrintf( "SVC_RemoteCommand: rate limit exceeded, dropping request\n" );
-			return;
-		}
-
-		valid = qfalse;
-		Com_Printf ("Bad rcon from %s: %s\n", NET_AdrToString (from), Cmd_ArgsFrom(2) );
-	} else {
-		valid = qtrue;
-		Com_Printf ("Rcon from %s: %s\n", NET_AdrToString (from), Cmd_ArgsFrom(2) );
+	if ( !strlen( sv_rconPassword->string ) || strcmp (Cmd_Argv(1), sv_rconPassword->string) ) {
+		if (BadRconAttempted(from))
+			SV_LogSecurityEvent(from, "Bad rcon limit hit, address is now banned from rcon", va("Country: %s, Password: %s^7, Command: %s^7", country, Cmd_Argv(1), VALIDSTRING(cmd_aux) ? cmd_aux : "(none)"));
+		else
+			SV_LogSecurityEvent(from, "Bad rcon", va("Country: %s, Password: %s, Command: %s", country, Cmd_Argv(1), VALIDSTRING(cmd_aux) ? cmd_aux : "(none)"));
+		return;
 	}
+
+	if (!VALIDSTRING(cmd_aux))
+		return;
+
+	Com_Printf("Rcon from %s (%s): %s\n", NET_AdrToString(from), country, Cmd_ArgsFrom(2));
 
 	// start redirecting all print outputs to the packet
 	svs.redirectAddress = from;
@@ -702,28 +885,10 @@ void SVC_RemoteCommand( netadr_t from, msg_t *msg ) {
 
 	remaining[0] = 0;
 
-	if ( !strlen( sv_rconPassword->string ) ) {
-		Com_Printf ("No rconpassword set.\n");
-	} else if ( !valid ) {
-		Com_Printf ("Bad rconpassword.\n");
-	} else {
-		// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=543
-		// get the command directly, "rcon <pass> <command>" to avoid quoting issues
-		// extract the command by walking
-		// since the cmd formatting can fuckup (amount of spaces), using a dumb step by step parsing
-		cmd_aux = Cmd_Cmd();
-		cmd_aux+=4;
-		while(cmd_aux[0]==' ')
-			cmd_aux++;
-		while(cmd_aux[0] && cmd_aux[0]!=' ') // password
-			cmd_aux++;
-		while(cmd_aux[0]==' ')
-			cmd_aux++;
 
-		Q_strcat( remaining, sizeof(remaining), cmd_aux);
+	Q_strcat( remaining, sizeof(remaining), cmd_aux);
 
-		Cmd_ExecuteString (remaining);
-	}
+	Cmd_ExecuteString (remaining);
 
 	Com_EndRedirect ();
 
@@ -1209,6 +1374,8 @@ void SV_Frame( int msec ) {
 		Cbuf_AddText( "map_restart 0\n" );
 		return;
 	}
+
+	PollSecurityEventsForPrinting();
 
 	// update infostrings if anything has been changed
 	if ( cvar_modifiedFlags & CVAR_SERVERINFO ) {

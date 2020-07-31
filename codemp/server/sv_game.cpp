@@ -116,6 +116,7 @@ void SV_ShutdownGameProgs( void ) {
 		return;
 	}
 	SV_UnbindGame();
+	SV_WriteRconBans();
 }
 
 /*
@@ -137,6 +138,8 @@ void SV_InitGameProgs( void ) {
 	SV_BindGame();
 
 	SV_InitGame( qfalse );
+
+	Cbuf_AddText("rconrehashbans\n");
 }
 
 
