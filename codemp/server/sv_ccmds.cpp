@@ -1236,6 +1236,18 @@ static void SV_PrintUserinfo_f(void) {
 	}
 }
 
+extern std::deque<std::string> recentSecurityPrints;
+static void SV_PrintSecurityEvents_f(void) {
+	if (!recentSecurityPrints.size()) {
+		Com_Printf("No recent security events.\n");
+		return;
+	}
+
+	Com_Printf("Recent security events:\n");
+	for (auto & message : recentSecurityPrints)
+		Com_Printf(message.c_str());
+}
+
 static void SV_BanAddr_f( void )
 {
 	SV_AddBanToList( qfalse );
@@ -2048,6 +2060,7 @@ void SV_AddOperatorCommands( void ) {
 	Cmd_AddCommand("rconunban", SV_RconUnban_f, "Unbans an address from using rcon");
 	Cmd_AddCommand("rconbanlist", SV_RconBanlist_f, "Lists addresses banned from using rcon");
 	Cmd_AddCommand("userinfo", SV_PrintUserinfo_f, "Prints the userinfo of player(s)");
+	Cmd_AddCommand("securityevents", SV_PrintSecurityEvents_f, "Prints recent security events");
 }
 
 /*

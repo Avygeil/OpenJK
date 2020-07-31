@@ -350,6 +350,7 @@ void SV_FinalMessage (char *message);
 void QDECL SV_SendServerCommand( client_t *cl, const char *fmt, ...);
 void SV_LogSecurityEvent(netadr_t address, const char *description, const char *details);
 bool IsBannedFromRcon(netadr_t from);
+#define NUM_SAVED_SECURITY_PRINTS	(10)
 
 
 void SV_AddOperatorCommands (void);

@@ -687,17 +687,20 @@ typedef struct {
 	std::string		details;
 } securityEvent_t;
 
-std::vector<securityEvent_t> securityEvents;
+std::deque<securityEvent_t> securityEvents;
+std::deque<std::string> recentSecurityPrints;
 
 static void PrintSecurityEvent(securityEvent_t qe, int numberOfOccurences, int numUniqueIps, int numUniqueDetails) {
 	if (numberOfOccurences <= 0)
 		return; // shouldn't happen
 
-	Com_Printf("%s""ecurity event%s from %s: %s^7\n",
+	char *message = va("%s""ecurity event%s from %s: %s^7\n",
 		numberOfOccurences == 1 ? "S" : va("%d s", numberOfOccurences),
 		numberOfOccurences == 1 ? "" : "s",
 		numUniqueIps == 1 ? NET_AdrToString(qe.address) : va("%d addresses", numUniqueIps),
-		!qe.details.empty() && numUniqueDetails == 1 ? va("%s (%s)", qe.description, qe.details.c_str()) : qe.description);
+		!qe.details.empty() ? (va("%s (%s)", qe.description, (numUniqueDetails == 1 ? qe.details.c_str() : va("details from one: %s", qe.details.c_str())))) : qe.description);
+
+	Com_Printf(message);
 }
 
 void SV_LogSecurityEvent(netadr_t address, const char *description, const char *details) {
@@ -712,6 +715,17 @@ void SV_LogSecurityEvent(netadr_t address, const char *description, const char *
 		PrintSecurityEvent(qe, 1, 1, 1); // allow them to print instantly if set to 0
 	else
 		securityEvents.push_back(qe);
+
+	// we still maintain the last few unsquashed for if an admin wants to see them
+	std::string message(va("Address: %s, Description: %s%s\n",
+		NET_AdrToString(address), description, VALIDSTRING(details) ? va(", Details: %s", details) : ""));
+	if (recentSecurityPrints.size() < NUM_SAVED_SECURITY_PRINTS) {
+		recentSecurityPrints.push_back(message);
+	}
+	else {
+		recentSecurityPrints.pop_front();
+		recentSecurityPrints.push_back(message);
+	}
 }
 
 // periodically check if there are any bad things to report
@@ -719,35 +733,41 @@ static void PollSecurityEventsForPrinting(void) {
 	if (sv_securityEventPollingRate->integer <= 0)
 		return; // they are printing instantly from SV_LogSecurityEvent if this is set to 0; do nothing here
 
+	if (!securityEvents.size())
+		return;
+
 	static int lastPrintTime = 0;
 	int now = Sys_Milliseconds();
-	if (now - lastPrintTime < sv_securityEventPollingRate->integer || !securityEvents.size())
+	if (now - lastPrintTime < sv_securityEventPollingRate->integer)
 		return;
 
 	while (securityEvents.size() > 0) {
 		// pop one off
-		securityEvent_t qe = securityEvents.back();
-		securityEvents.pop_back();
+		securityEvent_t qe = securityEvents.front();
+		securityEvents.erase(securityEvents.begin());
 
 		// see if any others match it
 		int numTotal = 1, numUniqueIps = 1, numUniqueDetails = 1;
-		for (int i = securityEvents.size() - 1; i >= 0; i--) {
-			securityEvent_t thisQe = securityEvents[i];
-
-			if (!Q_stricmp(qe.description, thisQe.description)) {
+		
+		for (auto it = securityEvents.begin(); it != securityEvents.end();) {
+			if (!Q_stricmp(qe.description, it->description)) {
 				// a match
 				numTotal++;
-				if (!NET_CompareAdr(qe.address, thisQe.address))
+				if (!NET_CompareAdr(qe.address, it->address))
 					numUniqueIps++;
-				if (!qe.details.empty() && !thisQe.details.empty() && qe.details.compare(thisQe.details))
+				if (!qe.details.empty() && !it->details.empty() && qe.details.compare(it->details))
 					numUniqueDetails++;
-				securityEvents.pop_back();
+				it = securityEvents.erase(it);
+			}
+			else {
+				it++;
 			}
 		}
 
 		// print one message that includes however many we got
 		PrintSecurityEvent(qe, numTotal, numUniqueIps, numUniqueDetails);
 	}
+
 	lastPrintTime = now;
 }
 

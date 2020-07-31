@@ -111,6 +111,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 #include <array>
 #include <sstream>
 #include <regex>
+#include <queue>
 
 //Ignore __attribute__ on non-gcc platforms
 #if !defined(__GNUC__) && !defined(__attribute__)
