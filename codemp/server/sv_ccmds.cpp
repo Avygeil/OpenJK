@@ -1212,6 +1212,30 @@ void SV_RconBanlist_f(void) {
 		Com_Printf("No addresses are currently banned from using rcon.\n");
 }
 
+static void SV_PrintUserinfo_f(void) {
+	client_t *desired = nullptr;
+	if (Cmd_Argc() >= 2 && VALIDSTRING(Cmd_Argv(1))) {
+		desired = SV_GetPlayerByHandle();
+		if (!desired)
+			return;
+	}
+
+	bool printed = false;
+	for (client_t *client = svs.clients; client - svs.clients < sv_maxclients->integer; client++) {
+		if (client->state == CS_FREE || (desired && client != desired) || !VALIDSTRING(client->userinfo))
+			continue;
+		Com_Printf("%sUserinfo for client %d (%s^7): %s^7\n", printed ? "\n" : "", client - svs.clients, client->name, client->userinfo);
+		printed = true;
+	}
+
+	if (!printed) {
+		if (desired)
+			Com_Printf("Unable to print userinfo for the requested player.\n");
+		else
+			Com_Printf("No userinfo to print.\n");
+	}
+}
+
 static void SV_BanAddr_f( void )
 {
 	SV_AddBanToList( qfalse );
@@ -2023,6 +2047,7 @@ void SV_AddOperatorCommands( void ) {
 	Cmd_AddCommand("rconrehashbans", SV_RehashRconBans_f, "Reloads rcon banlist from file");
 	Cmd_AddCommand("rconunban", SV_RconUnban_f, "Unbans an address from using rcon");
 	Cmd_AddCommand("rconbanlist", SV_RconBanlist_f, "Lists addresses banned from using rcon");
+	Cmd_AddCommand("userinfo", SV_PrintUserinfo_f, "Prints the userinfo of player(s)");
 }
 
 /*
