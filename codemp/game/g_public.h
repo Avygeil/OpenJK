@@ -36,6 +36,7 @@ along with this program; if not, see <http://www.gnu.org/licenses/>.
 // in entityStates (level eType), so the game must explicitly flag
 // special server behaviors
 #define	SVF_NOCLIENT			0x00000001	// don't send entity to clients, even if it has effects
+#define SVF_COOLKIDSCLUB		0x00000002  // can only clip other entities that share this flag
 #define SVF_GHOST				0x00000004	// ignore while clipping entities in tracing
 #define SVF_BOT					0x00000008	// set if the entity is a bot
 #define SVF_PLAYER_USABLE		0x00000010	// player can use this with the use button
@@ -117,6 +118,9 @@ typedef struct entityShared_s {
 	// Using both arrays, a single entity can be hidden to some clients, broadcast to other clients and have the normal
 	// checks for more clients at the same time.
 	uint32_t	broadcastClients[2];
+
+	qboolean	singleEntityCollision;
+	int			singleEntityThatCanCollide;
 } entityShared_t;
 
 //bstate.h

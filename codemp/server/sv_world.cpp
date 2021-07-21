@@ -549,6 +549,8 @@ static void SV_ClipMoveToEntities( moveclip_t *clip ) {
 		return; // ghosted entities don't collide with any other entity
 	}
 
+	int flags = SV_GentityNum(clip->passEntityNum)->r.svFlags;
+
 	num = SV_AreaEntities( clip->boxmins, clip->boxmaxs, touchlist, MAX_GENTITIES);
 
 	if ( clip->passEntityNum != ENTITYNUM_NONE ) {
@@ -573,6 +575,22 @@ static void SV_ClipMoveToEntities( moveclip_t *clip ) {
 
 		if ( touch->r.svFlags & SVF_GHOST ) {
 			continue; // don't clip against ghosted entities
+		}
+
+		if ((flags & SVF_COOLKIDSCLUB) && !(touch->r.svFlags & SVF_COOLKIDSCLUB)) {
+			continue; // these ones can only clip each other
+		}
+
+		if (!(flags & SVF_COOLKIDSCLUB) && (touch->r.svFlags & SVF_COOLKIDSCLUB)) {
+			continue; // these ones can only clip each other
+		}
+
+		if (SV_GentityNum(clip->passEntityNum)->r.singleEntityCollision && touchlist[i] != SV_GentityNum(clip->passEntityNum)->r.singleEntityThatCanCollide) {
+			continue;
+		}
+
+		if (touch->r.singleEntityCollision && clip->passEntityNum != touch->r.singleEntityThatCanCollide) {
+			continue;
 		}
 
 		// see if we should ignore this entity
