@@ -3352,8 +3352,12 @@ void FS_Shutdown( qboolean closemfp ) {
 #endif
 
 	for(i = 0; i < MAX_FILE_HANDLES; i++) {
-		if (fsh[i].fileSize) {
+		if (fsh[i].fileSize || fsh[i].writerThread != nullptr) {
 			FS_FCloseFile(i);
+			if (fsh[i].handleAsync && closemfp) {
+				// for async files, we won't have time to wait for them to close asynchronously
+				FS_FCloseAio(i);
+			}
 		}
 	}
 
