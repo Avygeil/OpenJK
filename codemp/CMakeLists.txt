@@ -328,6 +328,9 @@ if(BuildMPDed)
 		"${MPDir}/server/sv_database.cpp"
 		"${MPDir}/server/sqlite3.c"
 		"${MPDir}/server/sqlite3.h"
+		"${MPDir}/server/sv_location.cpp"
+		"${MPDir}/server/kdtree.c"
+		"${MPDir}/server/kdtree.h"
 		)
 	source_group("server" FILES ${MPEngineAndDedServerFiles})
 	set(MPEngineAndDedFiles ${MPEngineAndDedFiles} ${MPEngineAndDedServerFiles})

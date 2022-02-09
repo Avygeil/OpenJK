@@ -605,3 +605,13 @@ namespace DB {
 	int Finalize(void *stmt);
 	int Exec(const char *sql, int (*callback)(void *, int, char **, char **), void *callbackarg, char **errmsg);
 }
+
+namespace LocationTree {
+	void *DataPtr(int index);
+	int *NumUnique(void);
+	void Create(void);
+	void Free(void);
+	int Insertf(const float *pos, void *data);
+	void *Nearestf(const float *origin);
+	void ResFree(void *set);
+}

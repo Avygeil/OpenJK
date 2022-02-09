@@ -118,6 +118,7 @@ void SV_ShutdownGameProgs( void ) {
 	SV_UnbindGame();
 	SV_WriteRconBans();
 	DB::Unload();
+	LocationTree::Free();
 }
 
 /*
@@ -136,6 +137,7 @@ void SV_InitGameProgs( void ) {
 	bot_enable = var ? var->integer : 0;
 
 	DB::Load();
+	LocationTree::Create();
 
 	svs.gameStarted = qtrue;
 	SV_BindGame();

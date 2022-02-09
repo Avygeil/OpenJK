@@ -2843,6 +2843,30 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_SQLITE3_EXEC:
 		return DB::Exec((const char *)VMA(1), (int (*)(void *, int, char **, char **))VMA(2), (void *)VMA(3), (char **)VMA(4));
 
+	case G_KD_DATAPTR:
+		return reinterpret_cast<intptr_t>(LocationTree::DataPtr(args[1]));
+
+	case G_KD_NUMUNIQUE:
+		return reinterpret_cast<intptr_t>(LocationTree::NumUnique());
+
+	case G_KD_CREATE:
+		LocationTree::Create();
+		return 0;
+
+	case G_KD_FREE:
+		LocationTree::Free();
+		return 0;
+
+	case G_KD_INSERTF:
+		return LocationTree::Insertf((const float *)VMA(1), (void *)VMA(2));
+
+	case G_KD_NEARESTF:
+		return reinterpret_cast<intptr_t>(LocationTree::Nearestf((const float *)VMA(1)));
+
+	case G_KD_RESFREE:
+		LocationTree::ResFree((void *)VMA(1));
+		return 0;
+
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %ld", (long int) args[0] );
 	}
