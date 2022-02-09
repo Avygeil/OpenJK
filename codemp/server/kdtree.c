@@ -33,6 +33,8 @@ OF SUCH DAMAGE.
 
 #if defined(WIN32) || defined(__WIN32__)
 #include <malloc.h>
+#else
+#include <alloca.h>
 #endif
 
 #ifdef USE_LIST_NODE_ALLOCATOR
