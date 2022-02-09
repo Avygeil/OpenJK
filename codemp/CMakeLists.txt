@@ -325,6 +325,9 @@ if(BuildMPDed)
 		"${MPDir}/server/maxminddb.h"
 		"${MPDir}/server/maxminddb_config.h"
 		"${MPDir}/server/maxminddb-compat-util.h"
+		"${MPDir}/server/sv_database.cpp"
+		"${MPDir}/server/sqlite3.c"
+		"${MPDir}/server/sqlite3.h"
 		)
 	source_group("server" FILES ${MPEngineAndDedServerFiles})
 	set(MPEngineAndDedFiles ${MPEngineAndDedFiles} ${MPEngineAndDedServerFiles})

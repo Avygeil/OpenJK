@@ -106,6 +106,8 @@ cvar_t	*sv_securityEventPollingRate;
 serverBan_t serverBans[SERVER_MAXBANS];
 int serverBansCount = 0;
 
+cvar_t	*g_inMemoryDb;
+
 /*
 =============================================================================
 

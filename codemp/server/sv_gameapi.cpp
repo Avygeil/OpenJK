@@ -46,12 +46,12 @@ void GVM_InitGame( int levelTime, int randomSeed, int restart ) {
 	memset(&svs.mostRecentFrameTimes, 0, sizeof(svs.mostRecentFrameTimes));
 	svs.lastFrameTimeIndex = -1;
 	if ( gvm->isLegacy ) {
-		VM_Call( gvm, GAME_INIT, levelTime, randomSeed, restart );
+		VM_Call( gvm, GAME_INIT, levelTime, randomSeed, restart, reinterpret_cast<intptr_t>(DB::GetDbPtr()));
 		return;
 	}
 	VMSwap v( gvm );
 
-	ge->InitGame( levelTime, randomSeed, restart );
+	ge->InitGame( levelTime, randomSeed, restart /*, DB::GetDbPtr()*/);
 }
 
 void GVM_ShutdownGame( int restart ) {
@@ -2830,6 +2830,18 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_GETCOUNTRY:
 		GeoIP::GetCountry((const char *)VMA(1), (char *)VMA(2), args[3]);
 		return 0;
+
+	case G_SQLITE3_PREPARE_V2:
+		return DB::PrepareV2((const char *)VMA(1), args[2], (void **)VMA(3), (const char **)VMA(4));
+
+	case G_SQLITE3_STEP:
+		return DB::Step((void *)VMA(1));
+
+	case G_SQLITE3_FINALIZE:
+		return DB::Finalize((void *)VMA(1));
+
+	case G_SQLITE3_EXEC:
+		return DB::Exec((const char *)VMA(1), (int (*)(void *, int, char **, char **))VMA(2), (void *)VMA(3), (char **)VMA(4));
 
 	default:
 		Com_Error( ERR_DROP, "Bad game system trap: %ld", (long int) args[0] );

@@ -117,6 +117,7 @@ void SV_ShutdownGameProgs( void ) {
 	}
 	SV_UnbindGame();
 	SV_WriteRconBans();
+	DB::Unload();
 }
 
 /*
@@ -133,6 +134,8 @@ void SV_InitGameProgs( void ) {
 
 	cvar_t *var = Cvar_Get( "bot_enable", "1", CVAR_LATCH );
 	bot_enable = var ? var->integer : 0;
+
+	DB::Load();
 
 	svs.gameStarted = qtrue;
 	SV_BindGame();

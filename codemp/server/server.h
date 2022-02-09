@@ -325,6 +325,8 @@ extern	cvar_t	*sv_securityEventPollingRate;
 extern	serverBan_t serverBans[SERVER_MAXBANS];
 extern	int serverBansCount;
 
+extern	cvar_t	*g_inMemoryDb;
+
 //===========================================================
 
 //
@@ -589,4 +591,17 @@ namespace GeoIP {
 	void Init(void);
 	void Shutdown(void);
 	void GetCountry(const char *ipStr, char *outBuf, int outBufSize);
+}
+
+//
+// sv_database.cpp
+//
+namespace DB {
+	void Load(void);
+	void Unload(void);
+	void *GetDbPtr(void);
+	int PrepareV2(const char *zSql, int nBytes, void **ppStmt, const char **pzTail);
+	int Step(void *stmt);
+	int Finalize(void *stmt);
+	int Exec(const char *sql, int (*callback)(void *, int, char **, char **), void *callbackarg, char **errmsg);
 }
