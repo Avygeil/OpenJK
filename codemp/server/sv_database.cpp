@@ -4,14 +4,17 @@ extern "C" {
 }
 
 #define DB_FILENAME				"enhanced.db"
+#define DB_FILENAME_SIEGE		"entranced.db"
 
 namespace DB {
 	static sqlite3 *diskDb = NULL;
 	static sqlite3 *dbPtr = NULL;
 
+#ifndef NO_SQL_CONFIG
 	static void ErrorCallback(void *ctx, int code, const char *msg) {
 		Com_Printf("SQL error (code %d): %s\n", code, msg);
 	}
+#endif
 
 	void Load(void)
 	{
@@ -19,11 +22,12 @@ namespace DB {
 			return;
 		}
 
+#ifndef NO_SQL_CONFIG
 		// db options
-
 		sqlite3_config(SQLITE_CONFIG_SINGLETHREAD); // we don't need multi threading
 		sqlite3_config(SQLITE_CONFIG_MEMSTATUS, 0); // we don't need allocation statistics
 		sqlite3_config(SQLITE_CONFIG_LOG, ErrorCallback, NULL); // error logging
+#endif
 
 		// initialize db
 
@@ -35,15 +39,50 @@ namespace DB {
 		}
 
 		Com_Printf("SQLite version: %s\n", sqlite3_libversion());
+		const char *opened = NULL;
 
-		rc = sqlite3_open_v2(DB_FILENAME, &diskDb, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+		// automatically support both base_enhanced and base_entranced database files
+		if (sv_gametype->integer == GT_SIEGE) {
+			// attempt to open existing siege db
+			rc = sqlite3_open_v2(DB_FILENAME_SIEGE, &diskDb, SQLITE_OPEN_READWRITE, NULL);
+			opened = DB_FILENAME_SIEGE;
+
+			if (rc != SQLITE_OK) {
+				// attempt to open existing regular db
+				rc = sqlite3_open_v2(DB_FILENAME, &diskDb, SQLITE_OPEN_READWRITE, NULL);
+				opened = DB_FILENAME;
+
+				if (rc != SQLITE_OK) {
+					// create siege db
+					rc = sqlite3_open_v2(DB_FILENAME_SIEGE, &diskDb, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+					opened = DB_FILENAME_SIEGE;
+				}
+			}
+		}
+		else {
+			// attempt to open existing regular db
+			rc = sqlite3_open_v2(DB_FILENAME, &diskDb, SQLITE_OPEN_READWRITE, NULL);
+			opened = DB_FILENAME;
+
+			if (rc != SQLITE_OK) {
+				// attempt to open existing siege db
+				rc = sqlite3_open_v2(DB_FILENAME_SIEGE, &diskDb, SQLITE_OPEN_READWRITE, NULL);
+				opened = DB_FILENAME_SIEGE;
+
+				if (rc != SQLITE_OK) {
+					// create regular db
+					rc = sqlite3_open_v2(DB_FILENAME, &diskDb, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+					opened = DB_FILENAME;
+				}
+			}
+		}
 
 		if (rc != SQLITE_OK) {
-			Com_Error(ERR_DROP, "Failed to open database file " DB_FILENAME " (code: %d)\n", rc);
+			Com_Error(ERR_DROP, "Failed to open database file %s (code: %d)\n", opened, rc);
 			return;
 		}
 
-		Com_Printf("Successfully opened database file " DB_FILENAME "\n");
+		Com_Printf("Successfully opened database file %s\n", opened);
 
 		if (g_inMemoryDb->integer) {
 			Com_Printf("Using in-memory database\n");
