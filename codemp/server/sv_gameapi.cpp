@@ -2840,6 +2840,9 @@ intptr_t SV_GameSystemCalls( intptr_t *args ) {
 	case G_SQLITE3_FINALIZE:
 		return DB::Finalize((void *)VMA(1));
 
+	case G_SQLITE3_RESET:
+		return DB::Reset((void *)VMA(1));
+
 	case G_SQLITE3_EXEC:
 		return DB::Exec((const char *)VMA(1), (int (*)(void *, int, char **, char **))VMA(2), (void *)VMA(3), (char **)VMA(4));
 

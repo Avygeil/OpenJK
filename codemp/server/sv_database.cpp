@@ -165,6 +165,10 @@ namespace DB {
 		return sqlite3_finalize((sqlite3_stmt *)stmt);
 	}
 
+	int Reset(void *stmt) {
+		return sqlite3_reset((sqlite3_stmt *)stmt);
+	}
+
 	int Exec(const char *sql, int (*callback)(void *, int, char **, char **), void *callbackarg, char **errmsg) {
 		return sqlite3_exec(dbPtr, sql, callback, callbackarg, errmsg);
 	}

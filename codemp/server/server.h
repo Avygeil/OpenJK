@@ -603,6 +603,7 @@ namespace DB {
 	int PrepareV2(const char *zSql, int nBytes, void **ppStmt, const char **pzTail);
 	int Step(void *stmt);
 	int Finalize(void *stmt);
+	int Reset(void *stmt);
 	int Exec(const char *sql, int (*callback)(void *, int, char **, char **), void *callbackarg, char **errmsg);
 }
 
