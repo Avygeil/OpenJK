@@ -577,12 +577,20 @@ static void SV_ClipMoveToEntities( moveclip_t *clip ) {
 			continue; // don't clip against ghosted entities
 		}
 
-		if ((flags & SVF_COOLKIDSCLUB) && !(touch->r.svFlags & SVF_COOLKIDSCLUB)) {
-			continue; // these ones can only clip each other
+		if ((flags & SVF_INGAME) && (touch->r.svFlags & SVF_HITINGAME)) {
+			continue;
 		}
+		else if ((flags & SVF_HITINGAME) && (touch->r.svFlags & SVF_INGAME)) {
 
-		if (!(flags & SVF_COOLKIDSCLUB) && (touch->r.svFlags & SVF_COOLKIDSCLUB)) {
-			continue; // these ones can only clip each other
+		}
+		else {
+			if ((flags & SVF_COOLKIDSCLUB) && !(touch->r.svFlags & SVF_COOLKIDSCLUB)) {
+				continue; // these ones can only clip each other
+			}
+
+			if (!(flags & SVF_COOLKIDSCLUB) && (touch->r.svFlags & SVF_COOLKIDSCLUB)) {
+				continue; // these ones can only clip each other
+			}
 		}
 
 		if (SV_GentityNum(clip->passEntityNum)->r.singleEntityCollision && touchlist[i] != SV_GentityNum(clip->passEntityNum)->r.singleEntityThatCanCollide) {
