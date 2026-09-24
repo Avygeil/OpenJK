@@ -1130,14 +1130,6 @@ void SV_WriteDownloadToClient(client_t *cl, msg_t *msg)
 	// based on the rate, how many bytes can we fit in the snapMsec time of the client
 	// normal rate / snapshotMsec calculation
 	rate = cl->rate;
-	if ( sv_maxRate->integer ) {
-		if ( sv_maxRate->integer < 1000 ) {
-			Cvar_Set( "sv_MaxRate", "1000" );
-		}
-		if ( sv_maxRate->integer < rate ) {
-			rate = sv_maxRate->integer;
-		}
-	}
 
 	if (!rate) {
 		blockspersnap = 1;
@@ -1383,31 +1375,7 @@ void SV_UserinfoChanged( client_t *cl ) {
 	Q_strncpyz( cl->name, Info_ValueForKey (cl->userinfo, "name"), sizeof(cl->name) );
 
 	// rate command
-
-	// if the client is on the same subnet as the server and we aren't running an
-	// internet public server, assume they don't need a rate choke
-	if ( Sys_IsLANAddress( cl->netchan.remoteAddress ) && com_dedicated->integer != 2 && sv_lanForceRate->integer == 1 ) {
-		cl->rate = 100000;	// lans should not rate limit
-	} else {
-		val = Info_ValueForKey (cl->userinfo, "rate");
-		if (sv_ratePolicy->integer == 1)
-		{
-			// NOTE: what if server sets some dumb sv_clientRate value?
-			cl->rate = sv_clientRate->integer;
-		}
-		else if( sv_ratePolicy->integer == 2)
-		{
-			i = atoi(val);
-			if (!i) {
-				i = sv_maxRate->integer; //FIXME old code was 3000 here, should increase to 5000 instead or maxRate?
-			}
-			i = Com_Clampi(1000, 100000, i);
-			i = Com_Clampi( sv_minRate->integer, sv_maxRate->integer, i );
-			if (i != cl->rate) {
-				cl->rate = i;
-			}
-		}
-	}
+	cl->rate = SV_CLIENT_RATE;
 
 	// snaps command
 	//Note: cl->snapshotMsec is also validated in sv_main.cpp -> SV_CheckCvars if sv_fps, sv_snapsMin or sv_snapsMax is changed

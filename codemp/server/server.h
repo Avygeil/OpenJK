@@ -271,6 +271,8 @@ extern	cvar_t	*sv_mapname;
 extern	cvar_t	*sv_mapChecksum;
 extern	cvar_t	*sv_serverid;
 extern	cvar_t	*sv_matchid;
+#define SV_CLIENT_RATE	100000
+
 extern	cvar_t	*sv_ratePolicy;
 extern	cvar_t	*sv_clientRate;
 extern	cvar_t	*sv_minRate;

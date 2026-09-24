@@ -1181,8 +1181,7 @@ SV_CheckCvars
 */
 void SV_CheckCvars( void ) {
 	static int lastModHostname = -1, lastModFramerate = -1, lastModSnapsMin = -1, lastModSnapsMax = -1;
-	static int lastModSnapsPolicy = -1, lastModRatePolicy = -1, lastModClientRate = -1;
-	static int lastModMaxRate = -1, lastModMinRate = -1;
+	static int lastModSnapsPolicy = -1;
 	qboolean changed = qfalse;
 
 	if ( sv_hostname->modificationCount != lastModHostname ) {
@@ -1203,64 +1202,6 @@ void SV_CheckCvars( void ) {
 		if( changed )
 		{
 			Cvar_Set("sv_hostname", hostname );
-		}
-	}
-
-	// check limits on client "rate" values based on server settings
-	if ( sv_clientRate->modificationCount != lastModClientRate ||
-		 sv_minRate->modificationCount != lastModMinRate ||
-		 sv_maxRate->modificationCount != lastModMaxRate ||
-		 sv_ratePolicy->modificationCount != lastModRatePolicy )
-	{
-		sv_clientRate->modificationCount = lastModClientRate;
-		sv_maxRate->modificationCount = lastModMaxRate;
-		sv_minRate->modificationCount = lastModMinRate;
-		sv_ratePolicy->modificationCount = lastModRatePolicy;
-
-		if (sv_ratePolicy->integer == 1)
-		{
-			// NOTE: what if server sets some dumb sv_clientRate value?
-			client_t *cl = NULL;
-			int i = 0;
-
-			for (i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++) {
-				// if the client is on the same subnet as the server and we aren't running an
-				// internet public server, assume they don't need a rate choke
-				if (Sys_IsLANAddress(cl->netchan.remoteAddress) && com_dedicated->integer != 2 && sv_lanForceRate->integer == 1) {
-					cl->rate = 100000;	// lans should not rate limit
-				}
-				else {
-					int val = sv_clientRate->integer;
-					if (val != cl->rate) {
-						cl->rate = val;
-					}
-				}
-			}
-		}
-		else if (sv_ratePolicy->integer == 2)
-		{
-			// NOTE: what if server sets some dumb sv_clientRate value?
-			client_t *cl = NULL;
-			int i = 0;
-
-			for (i = 0, cl = svs.clients; i < sv_maxclients->integer; i++, cl++) {
-				// if the client is on the same subnet as the server and we aren't running an
-				// internet public server, assume they don't need a rate choke
-				if (Sys_IsLANAddress(cl->netchan.remoteAddress) && com_dedicated->integer != 2 && sv_lanForceRate->integer == 1) {
-					cl->rate = 100000;	// lans should not rate limit
-				}
-				else {
-					int val = cl->rate;
-					if (!val) {
-						val = sv_maxRate->integer;
-					}
-					val = Com_Clampi( 1000, 90000, val );
-					val = Com_Clampi( sv_minRate->integer, sv_maxRate->integer, val );
-					if (val != cl->rate) {
-						cl->rate = val;
-					}
-				}
-			}
 		}
 	}
 
