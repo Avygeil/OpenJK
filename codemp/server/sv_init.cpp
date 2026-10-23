@@ -1044,6 +1044,8 @@ void SV_Init (void) {
 	sv_snapsMax = Cvar_Get ("sv_snapsMax", "40", CVAR_ARCHIVE_ND ); // sv_snapsMin <=> sv_fps
 	sv_snapsPolicy = Cvar_Get ("sv_snapsPolicy", "1", CVAR_ARCHIVE_ND, "Determines which policy of enforcement is used for client's \"snaps\" cvar");
 	Cvar_CheckRange(sv_snapsPolicy, 0, 2, qtrue);
+	sv_snapsAccumulate = Cvar_Get ("sv_snapsAccumulate", "0", CVAR_ARCHIVE_ND, "Keep an exact average snapshot interval by stepping from the previous deadline");
+	Cvar_CheckRange(sv_snapsAccumulate, 0, 1, qtrue);
 	sv_fps = Cvar_Get ("sv_fps", "40", CVAR_SERVERINFO, "Server frames per second" );
 	sv_timeout = Cvar_Get ("sv_timeout", "200", CVAR_TEMP );
 	sv_zombietime = Cvar_Get ("sv_zombietime", "2", CVAR_TEMP );

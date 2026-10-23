@@ -33,6 +33,7 @@ server_t		sv;					// local server
 cvar_t	*sv_snapsMin;			// minimum snapshots/sec a client can request, also limited by sv_snapsMax
 cvar_t	*sv_snapsMax;			// maximum snapshots/sec a client can request, also limited by sv_fps
 cvar_t	*sv_snapsPolicy;		// 0-2
+cvar_t	*sv_snapsAccumulate;	// step nextSnapshotTime by the interval instead of from svs.time
 cvar_t	*sv_fps = NULL;				// time rate for running non-clients
 cvar_t	*sv_timeout;			// seconds without any message
 cvar_t	*sv_zombietime;			// seconds to sink messages after disconnect

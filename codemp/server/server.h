@@ -252,6 +252,7 @@ extern	refexport_t		*re;					// interface to refresh .dll
 extern	cvar_t	*sv_snapsMin;
 extern	cvar_t	*sv_snapsMax;
 extern	cvar_t	*sv_snapsPolicy;
+extern	cvar_t	*sv_snapsAccumulate;
 extern	cvar_t	*sv_fps;
 extern	cvar_t	*sv_timeout;
 extern	cvar_t	*sv_zombietime;

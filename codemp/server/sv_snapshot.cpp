@@ -729,7 +729,13 @@ void SV_SendMessageToClient( msg_t *msg, client_t *client ) {
 		client->rateDelayed = qtrue;
 	}
 
-	client->nextSnapshotTime = svs.time + ((int) (rateMsec * com_timescale->value));
+	if ( sv_snapsAccumulate->integer && !client->rateDelayed && client->nextSnapshotTime <= svs.time
+		&& client->nextSnapshotTime + ((int) (rateMsec * com_timescale->value)) >= svs.time ) {
+		// step from the previous deadline so the average interval is exact; restart from now when a whole interval behind
+		client->nextSnapshotTime += ((int) (rateMsec * com_timescale->value));
+	} else {
+		client->nextSnapshotTime = svs.time + ((int) (rateMsec * com_timescale->value));
+	}
 
 	// don't pile up empty snapshots while connecting
 	if ( client->state != CS_ACTIVE ) {
